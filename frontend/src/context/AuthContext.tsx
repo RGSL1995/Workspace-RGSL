@@ -12,7 +12,7 @@ interface AuthContextType {
   user: Employee | null;
   loading: boolean;
   authenticated: boolean;
-  login: (email: string) => void;
+  login: () => void;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  const login = (email: string) => {
+  const login = () => {
     // Redirect to Google OAuth
     window.location.href = 'http://localhost:5000/api/auth/google';
   };

@@ -1,4 +1,4 @@
-import { Mail, Star, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface EmailItem {
