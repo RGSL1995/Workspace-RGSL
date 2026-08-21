@@ -32,24 +32,17 @@ export default function Landing() {
   };
 
   const menuItems = [
-    { label: 'Capabilities', href: '#capabilities' },
+    { label: 'Overview', href: '#overview' },
+    { label: 'Operations', href: '#operations' },
     { label: 'Workflow', href: '#workflow' },
-    { label: 'Teams', href: '#teams' },
-    { label: 'Contact', href: '#contact' },
-  ];
-
-  const departments = [
-    { name: 'Finance', emoji: '💰' },
-    { name: 'Trading', emoji: '📈' },
-    { name: 'Lending', emoji: '🏦' },
-    { name: 'Compliance', emoji: '✅' },
+    { label: 'Support', href: '#support' },
   ];
 
   return (
     <>
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400&family=JetBrains+Mono:wght@300;400;500&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap');
 
           * {
             margin: 0;
@@ -72,13 +65,13 @@ export default function Landing() {
           :root {
             --bg: #000000;
             --text: #ffffff;
-            --text-dim: rgba(255,255,255,0.62);
-            --text-dimmer: rgba(255,255,255,0.42);
-            --line: rgba(255,255,255,0.14);
-            --line-strong: rgba(255,255,255,0.26);
-            --fill-ghost: rgba(255,255,255,0.05);
-            --fill-solid: rgba(255,255,255,0.10);
-            --gutter: clamp(20px, 5vw, 100px);
+            --text-dim: rgba(255,255,255,0.78);
+            --text-dimmer: rgba(255,255,255,0.55);
+            --line: rgba(255,255,255,0.18);
+            --line-strong: rgba(255,255,255,0.32);
+            --fill-ghost: rgba(255,255,255,0.06);
+            --fill-solid: rgba(255,255,255,0.12);
+            --gutter: clamp(20px, 4.5vw, 80px);
             --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
             --font-display: "Sora", "Helvetica Neue", Helvetica, Arial, sans-serif;
             --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
@@ -89,18 +82,12 @@ export default function Landing() {
             width: 100%;
             height: 100vh;
             height: 100svh;
-            min-height: 640px;
+            min-height: 580px;
             overflow: hidden;
             display: grid;
             grid-template-rows: auto 1fr auto;
             isolation: isolate;
             background: var(--bg);
-          }
-
-          @media (max-height: 640px) {
-            .hero {
-              min-height: 100svh;
-            }
           }
 
           .hero__media {
@@ -123,29 +110,13 @@ export default function Landing() {
             inset: 0;
             z-index: 1;
             pointer-events: none;
-            background: linear-gradient(to right, transparent 0%, transparent 45%, rgba(0,0,0,0.45) 72%, rgba(0,0,0,0.72) 100%),
-                        linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 22%, transparent 78%, rgba(0,0,0,0.65) 100%);
+            background: linear-gradient(to right, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.7) 70%, rgba(0,0,0,0.88) 100%),
+                        linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.6) 100%);
           }
 
           @media (max-width: 720px) {
             .hero__media::before {
-              background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.75) 100%);
-            }
-          }
-
-          @media (prefers-reduced-motion: reduce) {
-            .hero__media video {
-              display: none;
-            }
-
-            .hero__media {
-              background-image: url('https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260806_132328_5f9029c8-218f-4489-82b6-29ff2849920e.png');
-              background-size: cover;
-              background-position: center;
-            }
-
-            .hero__media::before {
-              display: none;
+              background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.85) 100%);
             }
           }
 
@@ -156,18 +127,15 @@ export default function Landing() {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: clamp(20px, 2.4vw, 34px) var(--gutter);
+            padding: clamp(16px, 2.2vh, 28px) var(--gutter);
             gap: 32px;
-            padding-top: max(clamp(20px, 2.4vw, 34px), env(safe-area-inset-top));
-            padding-right: max(var(--gutter), env(safe-area-inset-right));
-            padding-left: max(var(--gutter), env(safe-area-inset-left));
           }
 
           .hero__logo {
             font-family: var(--font-display);
-            font-weight: 200;
-            font-size: clamp(20px, 1.75vw, 30px);
-            letter-spacing: 0.16em;
+            font-weight: 300;
+            font-size: clamp(20px, 1.6vw, 26px);
+            letter-spacing: 0.18em;
             color: var(--text);
             text-decoration: none;
             line-height: 1;
@@ -177,13 +145,13 @@ export default function Landing() {
           .hero__nav {
             display: flex;
             align-items: center;
-            gap: clamp(24px, 3.2vw, 62px);
+            gap: clamp(20px, 2.8vw, 48px);
             margin-left: auto;
           }
 
           .hero__nav-links {
             display: none;
-            gap: clamp(20px, 2.8vw, 56px);
+            gap: clamp(18px, 2.2vw, 44px);
             align-items: center;
           }
 
@@ -196,33 +164,28 @@ export default function Landing() {
           .hero__nav-link {
             font-family: var(--font-mono);
             font-weight: 400;
-            font-size: clamp(11px, 0.78vw, 14px);
+            font-size: clamp(11px, 0.75vw, 13px);
             letter-spacing: 0.18em;
             text-transform: uppercase;
-            color: var(--text);
+            color: var(--text-dim);
             text-decoration: none;
             transition: color 0.25s ease;
           }
 
           .hero__nav-link:hover {
-            color: var(--text-dim);
-          }
-
-          .hero__nav-link:focus-visible {
-            outline: 1px solid rgba(255,255,255,0.7);
-            outline-offset: 3px;
+            color: var(--text);
           }
 
           .hero__cta-nav {
             display: none;
-            padding: clamp(12px,1vw,17px) clamp(20px,1.8vw,32px);
+            padding: 10px 22px;
             border: 1px solid var(--line-strong);
             background: transparent;
             color: var(--text);
             font-family: var(--font-mono);
             font-weight: 400;
-            font-size: clamp(11px, 0.78vw, 14px);
-            letter-spacing: 0.22em;
+            font-size: clamp(11px, 0.75vw, 13px);
+            letter-spacing: 0.2em;
             text-transform: uppercase;
             cursor: pointer;
             transition: background 0.25s ease, border-color 0.25s ease;
@@ -236,12 +199,7 @@ export default function Landing() {
 
           .hero__cta-nav:hover {
             background: var(--fill-ghost);
-            border-color: rgba(255,255,255,0.5);
-          }
-
-          .hero__cta-nav:focus-visible {
-            outline: 1px solid rgba(255,255,255,0.7);
-            outline-offset: 3px;
+            border-color: rgba(255,255,255,0.6);
           }
 
           .hero__hamburger {
@@ -249,8 +207,8 @@ export default function Landing() {
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             background: none;
             border: none;
             cursor: pointer;
@@ -269,39 +227,25 @@ export default function Landing() {
             width: 22px;
             height: 1px;
             background: var(--text);
-            transition: transform 0.45s var(--ease-premium), opacity 0.25s ease;
+            transition: transform 0.4s var(--ease-premium), opacity 0.25s ease;
           }
 
-          .hero__hamburger span:nth-child(1) {
-            top: 16px;
-          }
-
-          .hero__hamburger span:nth-child(2) {
-            top: 22px;
-          }
-
-          .hero__hamburger span:nth-child(3) {
-            top: 28px;
-          }
+          .hero__hamburger span:nth-child(1) { top: 14px; }
+          .hero__hamburger span:nth-child(2) { top: 20px; }
+          .hero__hamburger span:nth-child(3) { top: 26px; }
 
           .hero__hamburger.is-open span:nth-child(1) {
-            transform: rotate(45deg) translateY(8px);
-            top: 22px;
+            transform: rotate(45deg) translateY(8.5px);
+            top: 20px;
           }
 
           .hero__hamburger.is-open span:nth-child(2) {
             opacity: 0;
-            transform: scaleX(0);
           }
 
           .hero__hamburger.is-open span:nth-child(3) {
-            transform: rotate(-45deg) translateY(-8px);
-            top: 22px;
-          }
-
-          .hero__hamburger:focus-visible {
-            outline: 1px solid rgba(255,255,255,0.7);
-            outline-offset: 3px;
+            transform: rotate(-45deg) translateY(-8.5px);
+            top: 20px;
           }
 
           /* MOBILE MENU */
@@ -309,17 +253,17 @@ export default function Landing() {
             position: fixed;
             inset: 0;
             z-index: 50;
-            background: rgba(4,4,6,0.94);
-            backdrop-filter: blur(28px) saturate(140%);
+            background: rgba(4,4,6,0.95);
+            backdrop-filter: blur(24px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: clamp(16px, 4vw, 32px);
+            gap: 24px;
             clip-path: circle(3% at calc(100% - 42px) 42px);
             opacity: 0;
             pointer-events: none;
-            transition: clip-path 0.7s var(--ease-premium), opacity 0.45s ease;
+            transition: clip-path 0.6s var(--ease-premium), opacity 0.4s ease;
           }
 
           .mobile-menu.is-open {
@@ -332,52 +276,21 @@ export default function Landing() {
           .mobile-menu button {
             font-family: var(--font-mono);
             font-weight: 400;
-            font-size: clamp(20px, 5.5vw, 28px);
-            letter-spacing: 0.14em;
+            font-size: 20px;
+            letter-spacing: 0.16em;
             text-transform: uppercase;
             color: var(--text);
             text-decoration: none;
             background: none;
             border: none;
             cursor: pointer;
-            opacity: 0;
-            transform: translateY(16px);
-            transition: opacity 0.4s ease, transform 0.5s var(--ease-premium);
-          }
-
-          .mobile-menu.is-open a,
-          .mobile-menu.is-open button {
-            opacity: 1;
-            transform: translateY(0);
-          }
-
-          .mobile-menu a:nth-child(1) { transition-delay: 180ms; }
-          .mobile-menu a:nth-child(2) { transition-delay: 250ms; }
-          .mobile-menu a:nth-child(3) { transition-delay: 320ms; }
-          .mobile-menu a:nth-child(4) { transition-delay: 390ms; }
-          .mobile-menu button { transition-delay: 460ms; }
-
-          .mobile-menu a:hover,
-          .mobile-menu button:hover {
-            color: var(--text-dim);
-          }
-
-          .mobile-menu a:focus-visible,
-          .mobile-menu button:focus-visible {
-            outline: 1px solid rgba(255,255,255,0.7);
-            outline-offset: 3px;
           }
 
           .mobile-menu button {
-            margin-top: clamp(16px, 3vw, 32px);
-            padding: 16px 40px;
+            margin-top: 20px;
+            padding: 14px 36px;
             border: 1px solid var(--line-strong);
-            letter-spacing: 0.22em;
-          }
-
-          .mobile-menu button:hover {
-            background: var(--fill-ghost);
-            border-color: rgba(255,255,255,0.5);
+            letter-spacing: 0.2em;
           }
 
           /* BODY */
@@ -386,9 +299,7 @@ export default function Landing() {
             align-items: center;
             justify-content: flex-end;
             padding: 0 var(--gutter);
-            padding-right: max(var(--gutter), env(safe-area-inset-right));
             min-height: 0;
-            overflow-y: auto;
             position: relative;
             z-index: 10;
           }
@@ -396,22 +307,21 @@ export default function Landing() {
           @media (max-width: 720px) {
             .hero__body {
               justify-content: center;
-              padding-left: max(var(--gutter), env(safe-area-inset-left));
             }
           }
 
           .panel {
-            width: min(34vw, 620px);
-            min-width: 380px;
+            width: min(36vw, 560px);
+            min-width: 320px;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: clamp(14px, 1.3vw, 22px);
+            gap: clamp(12px, 1.4vh, 20px);
           }
 
-          @media (max-width: 1100px) {
+          @media (max-width: 1000px) {
             .panel {
-              width: min(70vw, 520px);
+              width: min(65vw, 480px);
               min-width: 0;
             }
           }
@@ -427,88 +337,58 @@ export default function Landing() {
           .chip {
             font-family: var(--font-mono);
             font-weight: 400;
-            font-size: clamp(11px, 0.72vw, 14px);
-            letter-spacing: 0.2em;
+            font-size: clamp(10px, 0.7vw, 12px);
+            letter-spacing: 0.22em;
             text-transform: uppercase;
-            background: rgba(255,255,255,0.09);
-            color: var(--text);
-            padding: clamp(9px,0.8vw,14px) clamp(14px,1.1vw,20px);
+            background: rgba(255,255,255,0.08);
+            color: var(--text-dim);
+            padding: 7px 14px;
             line-height: 1;
             display: inline-block;
-          }
-
-          @media (max-width: 720px) {
-            .chip {
-              align-self: flex-start;
-            }
           }
 
           /* H1 */
           .hero__h1 {
             font-family: var(--font-display);
             font-weight: 200;
-            font-size: clamp(54px, 6.2vw, 118px);
-            letter-spacing: 0.03em;
-            line-height: 0.95;
-            margin-top: clamp(28px, 3vw, 52px);
+            font-size: clamp(44px, 5vw, 88px);
+            letter-spacing: 0.04em;
+            line-height: 1;
+            margin-top: 4px;
             color: var(--text);
-          }
-
-          @media (max-width: 380px) {
-            .hero__h1 {
-              font-size: clamp(44px, 15vw, 64px);
-            }
           }
 
           /* TAGLINE */
           .tagline {
             font-family: var(--font-mono);
             font-weight: 300;
-            font-size: clamp(11px, 0.94vw, 17px);
+            font-size: clamp(11px, 0.85vw, 14px);
             letter-spacing: 0.14em;
             text-transform: uppercase;
             color: var(--text-dim);
-            margin-top: clamp(14px, 1.4vw, 24px);
             line-height: 1.4;
           }
 
-          /* DEPARTMENTS */
-          .departments {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: clamp(12px, 2vw, 20px);
-            width: 100%;
-            margin-top: clamp(24px, 2.4vw, 40px);
-          }
-
-          .dept-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            text-align: center;
-          }
-
-          .dept-emoji {
-            font-size: clamp(28px, 4vw, 40px);
-          }
-
-          .dept-name {
+          /* FEATURES */
+          .features {
+            font-size: clamp(10px, 0.72vw, 12px);
+            color: var(--text-dimmer);
             font-family: var(--font-mono);
-            font-weight: 300;
-            font-size: clamp(10px, 0.7vw, 12px);
             letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: var(--text-dim);
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+            width: 100%;
+            line-height: 1.8;
           }
 
           /* FORM */
           .form {
             display: flex;
             flex-direction: column;
-            gap: clamp(14px, 1.3vw, 22px);
+            gap: 16px;
             width: 100%;
-            margin-top: clamp(38px, 4.6vw, 62px);
+            margin-top: 8px;
           }
 
           .form__label {
@@ -528,37 +408,33 @@ export default function Landing() {
             background: transparent;
             border: none;
             border-bottom: 1px solid var(--line-strong);
-            padding: 0 2px clamp(12px,1.1vw,18px) 2px;
+            padding: 0 2px 10px 2px;
             font-family: var(--font-display);
             font-weight: 300;
-            font-size: clamp(16px, 0.95vw, 18px);
+            font-size: clamp(14px, 0.9vw, 16px);
             color: var(--text);
             line-height: 1;
             transition: border-color 0.25s ease;
           }
 
           .form__input::placeholder {
-            color: var(--text-dim);
+            color: var(--text-dimmer);
           }
 
           .form__input:focus {
             outline: none;
-            border-bottom-color: rgba(255,255,255,0.85);
-          }
-
-          .form__input:focus::placeholder {
-            color: var(--text-dimmer);
+            border-bottom-color: rgba(255,255,255,0.9);
           }
 
           /* BUTTON */
           .btn {
             width: 100%;
-            padding: clamp(17px,1.6vw,27px) 20px;
+            padding: clamp(14px, 1.4vh, 18px) 20px;
             border: none;
             border-radius: 0;
             font-family: var(--font-mono);
             font-weight: 400;
-            font-size: clamp(11px, 0.78vw, 14px);
+            font-size: clamp(11px, 0.75vw, 13px);
             letter-spacing: 0.22em;
             text-transform: uppercase;
             cursor: pointer;
@@ -568,12 +444,7 @@ export default function Landing() {
           }
 
           .btn:hover {
-            background: rgba(255,255,255,0.17);
-          }
-
-          .btn:focus-visible {
-            outline: 1px solid rgba(255,255,255,0.7);
-            outline-offset: 3px;
+            background: rgba(255,255,255,0.2);
           }
 
           /* FOOTER */
@@ -581,74 +452,21 @@ export default function Landing() {
             position: relative;
             z-index: 10;
             border-top: 1px solid var(--line);
-            padding: clamp(18px, 1.7vw, 30px) var(--gutter);
-            padding-bottom: max(clamp(18px, 1.7vw, 30px), env(safe-area-inset-bottom));
-            padding-right: max(var(--gutter), env(safe-area-inset-right));
-            padding-left: max(var(--gutter), env(safe-area-inset-left));
+            padding: clamp(12px, 1.6vh, 20px) var(--gutter);
             text-align: center;
-            font-family: var(--font-display);
+            font-family: var(--font-mono);
             font-weight: 300;
-            font-size: clamp(12px, 0.82vw, 16px);
-            color: var(--text-dim);
-            line-height: 1.5;
+            font-size: clamp(11px, 0.72vw, 13px);
+            color: var(--text-dimmer);
+            letter-spacing: 0.08em;
           }
 
-          .hero__footer a {
-            color: var(--text);
-            text-decoration: underline;
-            text-decoration-offset: 3px;
-            text-decoration-thickness: 1px;
-            transition: color 0.25s ease;
-          }
-
-          .hero__footer a:hover {
-            color: var(--text-dim);
-          }
-
-          .hero__footer a:focus-visible {
-            outline: 1px solid rgba(255,255,255,0.7);
-            outline-offset: 3px;
-          }
-
-          /* SHORT HEIGHT */
           @media (max-height: 640px) {
-            .hero__header {
-              padding: 12px var(--gutter);
-            }
-
-            .hero__h1 {
-              font-size: clamp(36px, 7vw, 64px);
-              margin-top: 16px;
-            }
-
-            .departments {
-              margin-top: 12px;
-            }
-
-            .form {
-              margin-top: clamp(24px, 3vw, 40px);
-              gap: 10px;
-            }
-
-            .btn {
-              padding: 14px 16px;
-              font-size: 11px;
-            }
-
-            .hero__footer {
-              padding: 12px var(--gutter);
-              font-size: 11px;
-            }
-
-            .chip {
-              padding: 6px 10px;
-              font-size: 10px;
-            }
-
-            .tagline {
-              margin-top: 8px;
-              font-size: 10px;
-            }
+            .hero__header { padding: 10px var(--gutter); }
+            .hero__h1 { font-size: 36px; }
+            .form { margin-top: 6px; gap: 8px; }
+            .btn { padding: 10px 14px; }
+            .hero__footer { padding: 8px var(--gutter); font-size: 10px; }
           }
 
           body.menu-open {
@@ -678,7 +496,7 @@ export default function Landing() {
         {/* Navbar */}
         <header className="hero__header">
           <a href="#" className="hero__logo">
-            ECHO
+            RGSL
           </a>
           <nav className="hero__nav">
             <div className="hero__nav-links">
@@ -733,47 +551,16 @@ export default function Landing() {
         {/* Body */}
         <div className="hero__body">
           <div className="panel">
-            <div className="chip">[ TASK INTELLIGENCE ]</div>
+            <div className="chip">[ INTERNAL SYSTEM ]</div>
 
-            <h1 className="hero__h1">Echo</h1>
+            <h1 className="hero__h1">RGSL</h1>
 
-            <p className="tagline">AI-powered task orchestration for modern teams.</p>
+            <p className="tagline">Enterprise operations & task intelligence.</p>
 
-            <p style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(13px, 0.9vw, 16px)',
-              color: 'var(--text-dim)',
-              lineHeight: '1.6',
-              marginTop: 'clamp(12px, 1.2vw, 18px)',
-              maxWidth: '90%'
-            }}>
-              Unified workspace for Finance, Trading, Lending, and Compliance. Real-time collaboration powered by AI insights.
-            </p>
-
-            {/* Departments */}
-            <div className="departments">
-              {departments.map((dept) => (
-                <div key={dept.name} className="dept-item">
-                  <div className="dept-emoji">{dept.emoji}</div>
-                  <div className="dept-name">{dept.name}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{
-              fontSize: 'clamp(11px, 0.75vw, 13px)',
-              color: 'var(--text-dimmer)',
-              fontFamily: 'var(--font-mono)',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              marginTop: 'clamp(24px, 2.4vw, 32px)',
-              paddingTop: 'clamp(24px, 2.4vw, 32px)',
-              borderTop: '1px solid var(--line)',
-              width: '100%'
-            }}>
-              ✓ Real-time collaboration
-              <br />✓ AI-powered insights
-              <br />✓ Cross-department visibility
+            <div className="features">
+              ✓ Internal Network
+              <br />✓ Automated Workflows
+              <br />✓ AI Insights
             </div>
 
             <form className="form" onSubmit={handleSubmit} noValidate>
@@ -788,7 +575,7 @@ export default function Landing() {
                 required
               />
               <button type="submit" className="btn">
-                Begin
+                ENTER
               </button>
             </form>
           </div>
@@ -796,8 +583,7 @@ export default function Landing() {
 
         {/* Footer */}
         <footer className="hero__footer">
-          Echo — Task Intelligence Platform. <a href="#privacy-notice">Privacy</a> and{' '}
-          <a href="#service-contract">Terms</a>.
+          RGSL Group — Internal Operations. Authorized Access Only.
         </footer>
       </section>
     </>
