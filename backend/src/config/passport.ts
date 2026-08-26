@@ -1,9 +1,26 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import Employee from "../models/Employee";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+console.log("🔍 Passport Config Debug:");
+console.log("   GOOGLE_CLIENT_ID:", GOOGLE_CLIENT_ID ? "✅ Loaded" : "❌ Missing");
+console.log("   GOOGLE_CLIENT_SECRET:", GOOGLE_CLIENT_SECRET ? "✅ Loaded" : "❌ Missing");
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  throw new Error(
+    `❌ Google OAuth credentials missing!\n` +
+    `   Make sure your backend/.env file has:\n` +
+    `   GOOGLE_CLIENT_ID=your_client_id\n` +
+    `   GOOGLE_CLIENT_SECRET=your_client_secret`
+  );
+}
+
 const CALLBACK_URL = process.env.FRONTEND_URL
   ? `${process.env.FRONTEND_URL.replace("http", "")}/auth/google/callback`
   : "http://localhost:3000/auth/google/callback";
@@ -11,8 +28,8 @@ const CALLBACK_URL = process.env.FRONTEND_URL
 passport.use(
   new GoogleStrategy(
     {
-      clientID: GOOGLE_CLIENT_ID!,
-      clientSecret: GOOGLE_CLIENT_SECRET!,
+      clientID: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
       callbackURL: `http://localhost:5000/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {

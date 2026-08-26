@@ -1,6 +1,8 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import session from "express-session";
 import passport from "passport";
 
@@ -12,7 +14,6 @@ import authRoutes from "./routes/auth";
 import emailConnectionRoutes from "./routes/emailConnections";
 import aiRoutes from "./routes/ai";
 
-dotenv.config();
 const app = express();
 
 // CORS with credentials
