@@ -22,6 +22,7 @@
     "google-auth-library": "^11.0.2",
     "googleapis": "^176.0.0",
     "mongoose": "^9.9.3",
+    "node-schedule": "^2.1.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "socket.io": "^4.8.3"
@@ -31,6 +32,7 @@
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.19.0",
     "@types/node": "^26.2.0",
+    "@types/node-schedule": "^2.1.8",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
     "nodemon": "^3.1.14",

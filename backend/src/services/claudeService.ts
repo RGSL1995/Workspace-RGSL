@@ -1,8 +1,26 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+let client: Anthropic | null = null;
+
+const getClient = (): Anthropic => {
+  if (!client) {
+    console.log("🤖 [CLAUDE SERVICE] Initializing Anthropic client");
+    console.log("   ANTHROPIC_API_KEY exists:", !!process.env.ANTHROPIC_API_KEY);
+    console.log("   API key length:", process.env.ANTHROPIC_API_KEY?.length || 0);
+    console.log("   API key starts with:", process.env.ANTHROPIC_API_KEY?.substring(0, 20) || "N/A");
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error("❌ ANTHROPIC_API_KEY environment variable is not set!");
+    }
+
+    client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
+    console.log("🤖 [CLAUDE SERVICE] Anthropic client initialized successfully");
+  }
+  return client;
+};
 
 export interface EmailClassificationResult {
   classification: "important" | "action_required" | "informational" | "low_priority";
@@ -55,8 +73,8 @@ Respond in JSON format:
   } or null
 }`;
 
-    const message = await client.messages.create({
-      model: "claude-opus-4-1-20250805",
+    const message = await getClient().messages.create({
+      model: "claude-opus-5",
       max_tokens: 500,
       messages: [
         {
@@ -72,7 +90,13 @@ Respond in JSON format:
     // Parse JSON response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error("Invalid response format from Claude");
+      console.error("🤖 [CLAUDE] Invalid JSON format. Response:", responseText.substring(0, 200));
+      // Return default classification if parsing fails
+      return {
+        classification: "informational",
+        confidence_score: 0,
+        reasoning: "Failed to parse Claude response",
+      };
     }
 
     const result = JSON.parse(jsonMatch[0]);
@@ -124,8 +148,8 @@ Provide a brief, personalized daily briefing (2-3 sentences) with:
 
 Be concise and actionable.`;
 
-    const message = await client.messages.create({
-      model: "claude-opus-4-1-20250805",
+    const message = await getClient().messages.create({
+      model: "claude-opus-5",
       max_tokens: 300,
       messages: [
         {
@@ -168,8 +192,8 @@ Provide brief management insights (2-3 sentences):
 
 Be concise and actionable.`;
 
-    const message = await client.messages.create({
-      model: "claude-opus-4-1-20250805",
+    const message = await getClient().messages.create({
+      model: "claude-opus-5",
       max_tokens: 300,
       messages: [
         {
@@ -209,8 +233,8 @@ Current context:
 
 Be helpful, concise, and professional. Provide actionable advice.`;
 
-    const message = await client.messages.create({
-      model: "claude-opus-4-1-20250805",
+    const message = await getClient().messages.create({
+      model: "claude-opus-5",
       max_tokens: 500,
       system: systemPrompt,
       messages: [

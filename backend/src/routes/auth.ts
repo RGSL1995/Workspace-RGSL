@@ -1,24 +1,36 @@
 import express from "express";
 import passport from "passport";
-import { getCurrentUser, logout } from "../controllers/authController";
+import { getCurrentUser, logout, googleAuthCallback } from "../controllers/authController";
 
 const router = express.Router();
 
 // Google OAuth routes
 router.get(
   "/google",
+  (req, res, next) => {
+    console.log("🔷 [AUTH ROUTE] /google endpoint called");
+    next();
+  },
   passport.authenticate("google", {
-    scope: ["profile", "email"],
+    scope: [
+      "profile",
+      "email",
+      "https://www.googleapis.com/auth/gmail.modify",
+    ],
+    accessType: "offline",
+    prompt: "consent",
   })
 );
 
 router.get(
   "/google/callback",
+  (req, res, next) => {
+    console.log("\n🔷🔷🔷 [AUTH ROUTE] /google/callback CALLED 🔷🔷🔷");
+    console.log(`   Code: ${req.query.code?.toString().substring(0, 20)}...`);
+    next();
+  },
   passport.authenticate("google", { failureRedirect: "/" }),
-  (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    res.redirect(`${frontendUrl}/dashboard`);
-  }
+  googleAuthCallback
 );
 
 // Get current authenticated user

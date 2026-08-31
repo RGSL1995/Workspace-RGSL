@@ -15,6 +15,12 @@ export interface IEmployee extends Document {
 
   // OAuth
   google_id?: string;
+  google_profile?: {
+    picture?: string;
+    phone?: string;
+    locale?: string;
+    gender?: string;
+  };
 
   // Email Connections (moved to separate model)
   // Use EmailConnection model instead of storing here
@@ -82,6 +88,12 @@ const EmployeeSchema = new Schema<IEmployee>(
       type: String,
       sparse: true,
     },
+    google_profile: {
+      picture: String,
+      phone: String,
+      locale: String,
+      gender: String,
+    },
     notification_email: {
       type: Boolean,
       default: true,
@@ -104,7 +116,6 @@ const EmployeeSchema = new Schema<IEmployee>(
 );
 
 // Index for faster queries
-EmployeeSchema.index({ email: 1 });
 EmployeeSchema.index({ role: 1 });
 EmployeeSchema.index({ companies: 1 });
 EmployeeSchema.index({ departments: 1 });

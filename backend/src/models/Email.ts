@@ -10,6 +10,14 @@ export interface IEmail extends Document {
   body: string;
   html_body?: string;
 
+  // Attachments
+  attachments?: {
+    filename: string;
+    mimeType: string;
+    size: number;
+    attachmentId: string;
+  }[];
+
   // AI Classification
   classification: "important" | "action_required" | "informational" | "low_priority";
   confidence_score: number; // 0-1
@@ -23,6 +31,11 @@ export interface IEmail extends Document {
   is_read: boolean;
   is_starred: boolean;
   thread_id?: string;
+
+  // Assignment & Task
+  assigned_to?: mongoose.Types.ObjectId; // Employee ID
+  created_task_id?: mongoose.Types.ObjectId; // Reference to created task
+  assigned_at?: Date;
 
   // Metadata
   received_at: Date;
@@ -65,9 +78,25 @@ const EmailSchema = new Schema<IEmail>(
     },
     body: {
       type: String,
-      required: true,
+      default: "",
     },
     html_body: String,
+    attachments: [
+      {
+        filename: {
+          type: String,
+        },
+        mimeType: {
+          type: String,
+        },
+        size: {
+          type: Number,
+        },
+        attachmentId: {
+          type: String,
+        },
+      },
+    ],
     classification: {
       type: String,
       enum: ["important", "action_required", "informational", "low_priority"],
@@ -96,6 +125,17 @@ const EmailSchema = new Schema<IEmail>(
       default: false,
     },
     thread_id: String,
+    assigned_to: {
+      type: Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
+    created_task_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Task",
+      default: null,
+    },
+    assigned_at: Date,
     received_at: {
       type: Date,
       required: true,
@@ -112,7 +152,6 @@ const EmailSchema = new Schema<IEmail>(
 // Indexes for fast queries
 EmailSchema.index({ email_connection_id: 1, received_at: -1 });
 EmailSchema.index({ classification: 1 });
-EmailSchema.index({ gmail_id: 1 });
 EmailSchema.index({ from: 1 });
 EmailSchema.index({ received_at: -1 });
 EmailSchema.index({ is_read: 1 });

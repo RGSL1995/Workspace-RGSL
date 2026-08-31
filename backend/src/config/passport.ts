@@ -4,6 +4,8 @@ dotenv.config();
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import Employee from "../models/Employee";
+import EmailConnection from "../models/EmailConnection";
+import { syncEmailsFromConnection } from "../services/gmailService";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -33,29 +35,121 @@ passport.use(
       callbackURL: `http://localhost:5000/api/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
+      console.log("\n================================");
+      console.log("🔐🔐🔐 PASSPORT VERIFY CALLED 🔐🔐🔐");
+      console.log("================================");
+
       try {
+        console.log(`\n🔐 [PASSPORT STEP 1] OAuth callback received`);
+        console.log(`   Profile ID: ${profile.id}`);
+
         const email = profile.emails?.[0]?.value;
+        console.log(`🔐 [PASSPORT STEP 2] Extracted email: ${email}`);
 
         if (!email) {
+          console.error(`❌ [PASSPORT] No email found in profile`);
           return done(new Error("No email from Google"));
         }
 
-        // Find employee by email
+        console.log(`🔐 [PASSPORT STEP 3] Looking up employee in database`);
+        // Find or create employee
         let employee = await Employee.findOne({ email });
+        console.log(`🔐 [PASSPORT STEP 4] Employee lookup result: ${employee ? "FOUND" : "NOT FOUND"}`);
 
         if (!employee) {
-          // Employee doesn't exist - will be handled in controller
+          // Employee will be created in authController
+          // Pass tokens in profile for later use
+          profile.accessToken = accessToken;
+          profile.refreshToken = refreshToken;
           return done(null, profile);
         }
 
-        // Update Google ID if not set
+        // Update Google ID and profile data
         if (!employee.google_id) {
           employee.google_id = profile.id;
-          await employee.save();
         }
+
+        // Store Google profile data
+        employee.google_profile = {
+          picture: profile.photos?.[0]?.value,
+          phone: profile.phoneNumbers?.[0]?.value,
+          locale: profile._json?.locale,
+          gender: profile._json?.gender,
+        };
+
+        await employee.save();
+        console.log(`✅ Updated employee Google profile: ${email}`);
+
+        console.log(`🔐 [PASSPORT STEP 5] Checking for email connection`);
+        // Auto-create or update email connection
+        let emailConnection = await EmailConnection.findOne({
+          email,
+          owner_id: employee._id,
+        });
+        console.log(`🔐 [PASSPORT STEP 6] Email connection lookup: ${emailConnection ? "FOUND" : "NOT FOUND"}`);
+
+        if (!emailConnection && accessToken) {
+          console.log(`🔐 [PASSPORT STEP 7] Creating NEW email connection`);
+          // Create new email connection
+          emailConnection = new EmailConnection({
+            email,
+            type: "personal",
+            company: employee.companies[0] || "RGSL",
+            owner_id: employee._id,
+            authorized_employees: [employee._id],
+            google_id: profile.id,
+            google_tokens: {
+              access_token: accessToken,
+              refresh_token: refreshToken,
+              expires_at: Date.now() + 3600 * 1000,
+            },
+            created_by: employee._id,
+            last_synced: new Date(),
+            sync_status: "idle",
+          });
+
+          await emailConnection.save();
+          console.log(`✅ [PASSPORT STEP 8] Email connection CREATED: ${emailConnection._id}`);
+        } else if (emailConnection && accessToken) {
+          console.log(`🔐 [PASSPORT STEP 7] Updating EXISTING email connection`);
+          // Update tokens for existing connection
+          emailConnection.google_tokens = {
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_at: Date.now() + 3600 * 1000,
+          };
+          // Reset last_synced to fetch historical emails (30 days)
+          emailConnection.last_synced = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          await emailConnection.save();
+          console.log(`✅ [PASSPORT STEP 8] Email connection UPDATED: ${emailConnection._id}`);
+        } else {
+          console.warn(`⚠️ [PASSPORT STEP 7] No access token or connection found`);
+        }
+
+        // Always trigger sync if connection exists
+        if (emailConnection) {
+          console.log(`🔐 [PASSPORT STEP 9] Email connection ready for sync`);
+          console.log(`🔄 [PASSPORT STEP 10] Triggering email sync for: ${email}`);
+          console.log(`   Connection ID: ${emailConnection._id}`);
+          console.log(`   Has access token: ${!!emailConnection.google_tokens.access_token}`);
+
+          syncEmailsFromConnection(emailConnection._id.toString())
+            .then(() => console.log(`✅ [PASSPORT STEP 11] Email sync COMPLETED for ${email}`))
+            .catch((error) => {
+              console.error(`❌ [PASSPORT STEP 11] Email sync FAILED for ${email}`);
+              console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+            });
+        } else {
+          console.warn(`⚠️ [PASSPORT STEP 10] No email connection to sync`);
+        }
+
+        // Pass tokens in profile for controller
+        profile.accessToken = accessToken;
+        profile.refreshToken = refreshToken;
 
         return done(null, profile);
       } catch (error) {
+        console.error("Passport strategy error:", error);
         return done(error);
       }
     }

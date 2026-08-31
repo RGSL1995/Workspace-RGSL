@@ -55,11 +55,17 @@ router.get("/:id", async (req: Request, res: Response) => {
 // CREATE employee (Admin only)
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { email, name, role, departments, manager_id } = req.body;
+    const { email, name, role, departments, companies, manager_id } = req.body;
 
     if (!email || !name || !departments || departments.length === 0) {
       return res.status(400).json({
         error: "Email, name, and at least one department are required",
+      });
+    }
+
+    if (!companies || companies.length === 0) {
+      return res.status(400).json({
+        error: "At least one company is required",
       });
     }
 
@@ -73,12 +79,18 @@ router.post("/", async (req: Request, res: Response) => {
       name,
       role: role || "department_person",
       departments,
+      companies,
       manager_id: manager_id || null,
+      is_active: true,
+      notification_email: true,
+      notification_socket: true,
+      managed_employees: [],
     });
 
     await employee.save();
     res.status(201).json(employee);
   } catch (error) {
+    console.error("Create employee error:", error);
     res.status(500).json({ error: "Failed to create employee" });
   }
 });

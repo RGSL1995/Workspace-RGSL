@@ -98,7 +98,6 @@ EmailConnectionSchema.index({ email: 1 });
 EmailConnectionSchema.index({ type: 1, company: 1 });
 EmailConnectionSchema.index({ owner_id: 1 });
 EmailConnectionSchema.index({ authorized_employees: 1 });
-EmailConnectionSchema.index({ google_id: 1 });
 
 export default mongoose.model<IEmailConnection>(
   "EmailConnection",

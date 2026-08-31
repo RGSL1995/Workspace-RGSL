@@ -25,20 +25,30 @@ export const syncEmailsFromConnection = async (
   connectionId: string
 ): Promise<void> => {
   try {
+    console.log(`\n📧 [SYNC START] Connection ID: ${connectionId}`);
+    console.log(`⏱️ [SYNC] Timestamp: ${new Date().toISOString()}`);
+
     const connection = await EmailConnection.findById(connectionId);
     if (!connection) {
+      console.error(`❌ [SYNC ERROR] Email connection not found: ${connectionId}`);
       throw new Error("Email connection not found");
     }
+
+    console.log(`✅ [SYNC] Found connection for: ${connection.email}`);
+    console.log(`🔑 [SYNC] Access token exists: ${!!connection.google_tokens.access_token}`);
 
     // Update sync status
     connection.sync_status = "syncing";
     await connection.save();
+    console.log(`⏳ [SYNC] Status set to: syncing`);
 
     const gmail = getGmailClient(connection.google_tokens.access_token);
+    console.log(`🔐 [SYNC] Gmail client initialized`);
 
-    // Get emails from last sync or from 7 days ago
-    const lastSynced = connection.last_synced || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // Get emails from last sync or from 30 days ago (for first sync to get all history)
+    const lastSynced = connection.last_synced || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const query = `after:${Math.floor(lastSynced.getTime() / 1000)}`;
+    console.log(`📅 [SYNC] Query: ${query} (lastSynced: ${lastSynced.toISOString()})`);
 
     // List messages
     const listResponse = await gmail.users.messages.list({
@@ -48,6 +58,7 @@ export const syncEmailsFromConnection = async (
     });
 
     const messages = listResponse.data.messages || [];
+    console.log(`📬 [SYNC] Found ${messages.length} messages to sync`);
 
     // Process each message
     for (const message of messages) {
@@ -70,15 +81,44 @@ export const syncEmailsFromConnection = async (
       const subject = headers.find((h) => h.name === "Subject")?.value || "(No subject)";
       const date = headers.find((h) => h.name === "Date")?.value || new Date().toISOString();
 
-      // Extract body
+      // Extract body (prefer text/plain, fall back to text/html)
       let body = "";
       if (msg.payload.parts) {
-        const textPart = msg.payload.parts.find((p) => p.mimeType === "text/plain");
+        // Try text/plain first
+        let textPart = msg.payload.parts.find((p) => p.mimeType === "text/plain");
+        // Fall back to text/html if no plain text
+        if (!textPart) {
+          textPart = msg.payload.parts.find((p) => p.mimeType === "text/html");
+        }
         if (textPart?.body?.data) {
-          body = Buffer.from(textPart.body.data, "base64").toString("utf-8");
+          try {
+            body = Buffer.from(textPart.body.data, "base64").toString("utf-8");
+          } catch (e) {
+            console.warn(`⚠️ [SYNC] Failed to decode body for message ${message.id}`);
+          }
         }
       } else if (msg.payload.body?.data) {
-        body = Buffer.from(msg.payload.body.data, "base64").toString("utf-8");
+        try {
+          body = Buffer.from(msg.payload.body.data, "base64").toString("utf-8");
+        } catch (e) {
+          console.warn(`⚠️ [SYNC] Failed to decode body for message ${message.id}`);
+        }
+      }
+
+      // Extract attachments metadata
+      const attachments: any[] = [];
+      if (msg.payload.parts) {
+        for (const part of msg.payload.parts) {
+          if (part.filename) {
+            attachments.push({
+              filename: part.filename,
+              mimeType: part.mimeType,
+              size: part.body?.size || 0,
+              attachmentId: part.body?.attachmentId || "",
+            });
+            console.log(`📎 [SYNC] Found attachment: ${part.filename} (${part.mimeType})`);
+          }
+        }
       }
 
       // Check if email already exists
@@ -121,6 +161,7 @@ export const syncEmailsFromConnection = async (
         to,
         subject,
         body: body.substring(0, 10000), // Limit stored body
+        attachments: attachments, // Add attachments array
         classification: classification.classification,
         confidence_score: classification.confidence_score,
         suggested_task: classification.suggested_task,
@@ -131,6 +172,7 @@ export const syncEmailsFromConnection = async (
       });
 
       await email.save();
+      console.log(`✅ [SYNC] Saved email: ${subject.substring(0, 50)}`);
     }
 
     // Update sync status
@@ -138,8 +180,9 @@ export const syncEmailsFromConnection = async (
     connection.sync_status = "idle";
     connection.error_message = undefined;
     await connection.save();
+    console.log(`✅ [SYNC COMPLETE] Synced ${messages.length} emails for ${connection.email}`);
   } catch (error) {
-    console.error("Email sync error:", error);
+    console.error(`❌ [SYNC ERROR] ${error instanceof Error ? error.message : String(error)}`);
 
     // Update error status
     const connection = await EmailConnection.findById(connectionId);
@@ -245,5 +288,60 @@ export const getImportantEmailsForEmployee = async (
   } catch (error) {
     console.error("Get important emails error:", error);
     return [];
+  }
+};
+
+/**
+ * Send an email via Gmail
+ */
+export const sendEmail = async (
+  connectionId: string,
+  to: string[],
+  subject: string,
+  body: string,
+  cc?: string[],
+  bcc?: string[]
+): Promise<{ messageId: string; threadId: string }> => {
+  try {
+    console.log(`📧 [SEND] Preparing to send email from connection: ${connectionId}`);
+
+    const connection = await EmailConnection.findById(connectionId);
+    if (!connection) {
+      throw new Error("Email connection not found");
+    }
+
+    const gmail = getGmailClient(connection.google_tokens.access_token);
+
+    // Create email message
+    const emailLines = [
+      `To: ${to.join(", ")}`,
+      ...(cc ? [`Cc: ${cc.join(", ")}`] : []),
+      ...(bcc ? [`Bcc: ${bcc.join(", ")}`] : []),
+      `Subject: ${subject}`,
+      "MIME-Version: 1.0",
+      'Content-type: text/html; charset="UTF-8"',
+      "",
+      body,
+    ];
+
+    const email = emailLines.join("\n");
+    const encodedEmail = Buffer.from(email).toString("base64").replace(/\+/g, "-").replace(/\//g, "_");
+
+    const response = await gmail.users.messages.send({
+      userId: "me",
+      requestBody: {
+        raw: encodedEmail,
+      },
+    });
+
+    console.log(`✅ [SEND] Email sent successfully. Message ID: ${response.data.id}`);
+
+    return {
+      messageId: response.data.id || "",
+      threadId: response.data.threadId || "",
+    };
+  } catch (error) {
+    console.error(`❌ [SEND] Email send failed:`, error);
+    throw error;
   }
 };
