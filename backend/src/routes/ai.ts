@@ -170,23 +170,35 @@ router.post("/ask", async (req: Request, res: Response) => {
   }
 });
 
-// GET unread emails
+// GET unread emails with pagination
 router.get("/unread-emails", async (req: Request, res: Response) => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+
     const unreadEmails = await getUnreadEmailsForEmployee(req.session.userId);
+    const paginatedEmails = unreadEmails.slice(skip, skip + limit);
 
     res.json({
       count: unreadEmails.length,
-      emails: unreadEmails,
+      page,
+      limit,
+      emails: paginatedEmails,
+      hasMore: skip + limit < unreadEmails.length,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch unread emails" });
   }
 });
 
-// GET all emails
+// GET all emails with pagination
 router.get("/all-emails", async (req: Request, res: Response) => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+
     const personalConnections = await EmailConnection.find({
       owner_id: req.session.userId,
       type: "personal",
@@ -200,30 +212,49 @@ router.get("/all-emails", async (req: Request, res: Response) => {
     const allConnections = [...personalConnections, ...sharedConnections];
     const connectionIds = allConnections.map((c) => c._id);
 
+    // Get total count for pagination
+    const totalCount = await Email.countDocuments({
+      email_connection_id: { $in: connectionIds },
+    });
+
+    // Get paginated results
     const allEmails = await Email.find({
       email_connection_id: { $in: connectionIds },
     })
       .populate("email_connection_id", "email type")
       .sort({ received_at: -1 })
-      .limit(100);
+      .skip(skip)
+      .limit(limit);
 
     res.json({
-      count: allEmails.length,
+      count: totalCount,
+      page,
+      limit,
       emails: allEmails,
+      hasMore: skip + limit < totalCount,
+      totalPages: Math.ceil(totalCount / limit),
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch all emails" });
   }
 });
 
-// GET important emails
+// GET important emails with pagination
 router.get("/important-emails", async (req: Request, res: Response) => {
   try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+
     const importantEmails = await getImportantEmailsForEmployee(req.session.userId);
+    const paginatedEmails = importantEmails.slice(skip, skip + limit);
 
     res.json({
       count: importantEmails.length,
-      emails: importantEmails,
+      page,
+      limit,
+      emails: paginatedEmails,
+      hasMore: skip + limit < importantEmails.length,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch important emails" });
@@ -419,7 +450,10 @@ router.patch("/email/:emailId/star", async (req: Request, res: Response) => {
 // POST search emails
 router.post("/emails/search", async (req: Request, res: Response) => {
   try {
-    const { query } = req.body;
+    const { query, page } = req.body;
+    const pageNum = page || 1;
+    const limit = 50;
+    const skip = (pageNum - 1) * limit;
 
     if (!query || query.trim().length === 0) {
       return res.status(400).json({ error: "Search query is required" });
@@ -440,6 +474,17 @@ router.post("/emails/search", async (req: Request, res: Response) => {
 
     const searchRegex = new RegExp(query, "i");
 
+    // Get total count for pagination
+    const totalCount = await Email.countDocuments({
+      email_connection_id: { $in: connectionIds },
+      $or: [
+        { subject: searchRegex },
+        { from: searchRegex },
+        { body: searchRegex },
+      ],
+    });
+
+    // Get paginated results
     const emails = await Email.find({
       email_connection_id: { $in: connectionIds },
       $or: [
@@ -450,13 +495,18 @@ router.post("/emails/search", async (req: Request, res: Response) => {
     })
       .populate("email_connection_id", "email type")
       .sort({ received_at: -1 })
-      .limit(50);
+      .skip(skip)
+      .limit(limit);
 
-    console.log(`🔍 [SEARCH] Found ${emails.length} emails matching: ${query}`);
+    console.log(`🔍 [SEARCH] Found ${totalCount} emails matching: ${query} (page ${pageNum})`);
     res.json({
-      count: emails.length,
+      count: totalCount,
+      page: pageNum,
+      limit,
       emails: emails,
       query: query,
+      hasMore: skip + limit < totalCount,
+      totalPages: Math.ceil(totalCount / limit),
     });
   } catch (error) {
     console.error("Search error:", error);

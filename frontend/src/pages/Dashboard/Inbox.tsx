@@ -20,6 +20,10 @@ export default function Inbox() {
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Get current user for Socket.io authentication
   useEffect(() => {
@@ -57,18 +61,22 @@ export default function Inbox() {
   });
 
   useEffect(() => {
-    fetchEmails();
+    setPage(1);
+    setEmails([]);
+    fetchEmails(1);
   }, [filter]);
 
-  const fetchEmails = async () => {
+  const fetchEmails = async (pageNum: number) => {
     try {
-      setLoading(true);
-      let url = 'http://localhost:5000/api/ai/all-emails';
+      if (pageNum === 1) {
+        setLoading(true);
+      }
+      let url = `http://localhost:5000/api/ai/all-emails?page=${pageNum}`;
 
       if (filter === 'important') {
-        url = 'http://localhost:5000/api/ai/important-emails';
+        url = `http://localhost:5000/api/ai/important-emails?page=${pageNum}`;
       } else if (filter === 'unread') {
-        url = 'http://localhost:5000/api/ai/unread-emails';
+        url = `http://localhost:5000/api/ai/unread-emails?page=${pageNum}`;
       }
 
       const response = await fetch(url, {
@@ -77,13 +85,26 @@ export default function Inbox() {
 
       if (response.ok) {
         const data = await response.json();
-        setEmails(data.emails);
+        if (pageNum === 1) {
+          setEmails(data.emails);
+        } else {
+          setEmails((prev) => [...prev, ...data.emails]);
+        }
+        setTotalCount(data.count);
+        setHasMore(data.hasMore !== false);
+        setPage(pageNum);
       }
     } catch (error) {
       console.error('Failed to fetch emails:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const loadMore = () => {
+    setLoadingMore(true);
+    fetchEmails(page + 1);
   };
 
   const getClassificationColor = (classification: string) => {
@@ -233,6 +254,27 @@ export default function Inbox() {
                   </div>
                 </div>
               ))}
+              </div>
+            )}
+
+            {/* Load More Button */}
+            {hasMore && filteredEmails.length > 0 && (
+              <div className="flex justify-center p-4">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loadingMore ? '⏳ Loading more...' : `📬 Load More (${emails.length}/${totalCount})`}
+                </button>
+              </div>
+            )}
+
+            {/* End of emails message */}
+            {!hasMore && emails.length > 0 && (
+              <div className="text-center p-4 text-slate-400">
+                <p className="text-sm">✅ You've reached the end ({emails.length} emails)</p>
               </div>
             )}
           </div>
