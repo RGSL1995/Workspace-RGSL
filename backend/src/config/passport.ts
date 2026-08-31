@@ -59,8 +59,9 @@ passport.use(
         if (!employee) {
           // Employee will be created in authController
           // Pass tokens in profile for later use
-          profile.accessToken = accessToken;
-          profile.refreshToken = refreshToken;
+          const profileWithTokens = profile as any;
+          profileWithTokens.accessToken = accessToken;
+          profileWithTokens.refreshToken = refreshToken;
           return done(null, profile);
         }
 
@@ -70,11 +71,12 @@ passport.use(
         }
 
         // Store Google profile data
+        const googleProfile = profile as any;
         employee.google_profile = {
           picture: profile.photos?.[0]?.value,
-          phone: profile.phoneNumbers?.[0]?.value,
+          phone: googleProfile.phoneNumbers?.[0]?.value,
           locale: profile._json?.locale,
-          gender: profile._json?.gender,
+          gender: googleProfile._json?.gender,
         };
 
         await employee.save();
@@ -144,8 +146,9 @@ passport.use(
         }
 
         // Pass tokens in profile for controller
-        profile.accessToken = accessToken;
-        profile.refreshToken = refreshToken;
+        const profileWithTokens2 = profile as any;
+        profileWithTokens2.accessToken = accessToken;
+        profileWithTokens2.refreshToken = refreshToken;
 
         return done(null, profile);
       } catch (error) {
