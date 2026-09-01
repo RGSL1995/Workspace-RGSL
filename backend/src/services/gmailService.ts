@@ -8,10 +8,16 @@ import Employee from "../models/Employee";
  * Initialize Gmail API client
  */
 const getGmailClient = (accessToken: string) => {
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME;
+  const BACKEND_URL = isProduction
+    ? 'https://api.rgslgroup.com'
+    : `http://localhost:${process.env.PORT || 5000}`;
+  const CALLBACK_URL = `${BACKEND_URL}/api/auth/google/callback`;
+
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    `http://localhost:${process.env.PORT || 5000}/api/auth/google/callback`
+    CALLBACK_URL
   );
 
   oauth2Client.setCredentials({ access_token: accessToken });
@@ -121,10 +127,6 @@ export const syncEmailsFromConnection = async (
         }
       }
 
-      // Check if email already exists
-      const existingEmail = await Email.findOne({ gmail_id: message.id });
-      if (existingEmail) continue;
-
       // Get employee for classification context
       let employeeRole = "department_person";
       let employeeDepartments = [];
@@ -153,25 +155,31 @@ export const syncEmailsFromConnection = async (
         employeeDepartments
       );
 
-      // Save email to database
-      const email = new Email({
-        gmail_id: message.id,
-        email_connection_id: connectionId,
-        from,
-        to,
-        subject,
-        body: body.substring(0, 10000), // Limit stored body
-        attachments: attachments, // Add attachments array
-        classification: classification.classification,
-        confidence_score: classification.confidence_score,
-        suggested_task: classification.suggested_task,
-        is_read: msg.labelIds?.includes("UNREAD") ? false : true,
-        is_starred: msg.labelIds?.includes("STARRED") ? true : false,
-        thread_id: msg.threadId,
-        received_at: new Date(date),
-      });
-
-      await email.save();
+      // Upsert email to avoid duplicate key errors in concurrent syncs
+      await Email.updateOne(
+        { gmail_id: message.id },
+        {
+          $setOnInsert: {
+            gmail_id: message.id,
+            email_connection_id: connectionId,
+            from,
+            to,
+            subject,
+            body: body.substring(0, 10000),
+            attachments: attachments,
+            thread_id: msg.threadId,
+            received_at: new Date(date),
+          },
+          $set: {
+            classification: classification.classification,
+            confidence_score: classification.confidence_score,
+            suggested_task: classification.suggested_task,
+            is_read: msg.labelIds?.includes("UNREAD") ? false : true,
+            is_starred: msg.labelIds?.includes("STARRED") ? true : false,
+          },
+        },
+        { upsert: true }
+      );
       console.log(`✅ [SYNC] Saved email: ${subject.substring(0, 50)}`);
     }
 
