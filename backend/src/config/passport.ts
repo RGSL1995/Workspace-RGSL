@@ -23,9 +23,9 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
   );
 }
 
-const CALLBACK_URL = process.env.FRONTEND_URL
-  ? `${process.env.FRONTEND_URL.replace("http", "")}/auth/google/callback`
-  : "http://localhost:3000/auth/google/callback";
+// Construct backend OAuth callback URL
+const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+const CALLBACK_URL = `${BACKEND_URL}/api/auth/google/callback`;
 
 passport.use(
   new GoogleStrategy(
