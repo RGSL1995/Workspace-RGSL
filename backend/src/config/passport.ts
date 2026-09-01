@@ -24,7 +24,10 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
 }
 
 // Construct backend OAuth callback URL
-const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME;
+const BACKEND_URL = isProduction
+  ? 'https://api.rgslgroup.com:8080'
+  : `http://localhost:${process.env.PORT || 5000}`;
 const CALLBACK_URL = `${BACKEND_URL}/api/auth/google/callback`;
 
 passport.use(
