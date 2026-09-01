@@ -6,6 +6,7 @@ export default function Landing() {
   const { authenticated } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     if (authenticated) {
@@ -28,7 +29,7 @@ export default function Landing() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    window.location.href = `${apiUrl}/api/auth/google`;
   };
 
   const menuItems = [
@@ -508,7 +509,7 @@ export default function Landing() {
             </div>
             <button
               className="hero__cta-nav"
-              onClick={() => (window.location.href = 'http://localhost:5000/api/auth/google')}>
+              onClick={() => (window.location.href = `${apiUrl}/api/auth/google`)}>
               SIGN IN
             </button>
             <button
@@ -542,7 +543,7 @@ export default function Landing() {
             type="button"
             onClick={() => {
               closeMenu();
-              window.location.href = 'http://localhost:5000/api/auth/google';
+              window.location.href = `${apiUrl}/api/auth/google`;
             }}>
             SIGN IN
           </button>

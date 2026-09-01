@@ -23,10 +23,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/me', {
+      const response = await fetch(`${apiUrl}/api/auth/me`, {
         credentials: 'include',
       });
 
@@ -51,12 +52,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = () => {
     // Redirect to Google OAuth
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    window.location.href = `${apiUrl}/api/auth/google`;
   };
 
   const logout = async () => {
     try {
-      await fetch('http://localhost:5000/api/auth/logout', {
+      await fetch(`${apiUrl}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });
