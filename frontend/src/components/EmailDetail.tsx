@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, X, AlertCircle, Star, Archive, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Download, X, AlertCircle, Star, Eye, EyeOff, UserPlus } from 'lucide-react';
 
 interface Attachment {
   filename: string;
@@ -20,6 +20,7 @@ interface EmailDetailData {
   classification: string;
   confidence_score: number;
   is_read: boolean;
+  is_starred: boolean;
   received_at: string;
 }
 

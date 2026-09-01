@@ -1,4 +1,4 @@
-import { Mail, Search, Star, Archive, Eye } from 'lucide-react';
+import { Mail, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import EmailDetail from '../../components/EmailDetail';
 import { useEmailSocket } from '../../hooks/useEmailSocket';
