@@ -3,6 +3,8 @@ import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export const useEmailSocket = (userId: string | undefined, onNewEmails: (emails: any[]) => void) => {
   const socketRef = useRef<Socket | null>(null);
 
@@ -11,7 +13,7 @@ export const useEmailSocket = (userId: string | undefined, onNewEmails: (emails:
 
     // Create socket connection if it doesn't exist
     if (!socket) {
-      socket = io('http://localhost:5000', {
+      socket = io(API_URL, {
         withCredentials: true,
         reconnection: true,
         reconnectionDelay: 1000,

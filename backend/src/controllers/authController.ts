@@ -141,11 +141,19 @@ export const googleAuthCallback = async (
       // Don't fail auth if sync fails
     }
 
-    console.log(`🔓 [AUTH CALLBACK STEP 16] Redirecting to dashboard`);
-    // Redirect to dashboard
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    console.log(`🔓 [AUTH CALLBACK STEP 17] Redirect URL: ${frontendUrl}/dashboard`);
-    res.redirect(`${frontendUrl}/dashboard`);
+    console.log(`🔓 [AUTH CALLBACK STEP 16] Saving session before redirect`);
+    req.session.save((err) => {
+      if (err) {
+        console.error(`❌ [AUTH CALLBACK] Session save failed:`, err);
+        return res.status(500).json({ error: "Session save failed" });
+      }
+
+      console.log(`🔓 [AUTH CALLBACK STEP 17] Redirecting to dashboard`);
+      // Redirect to dashboard
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      console.log(`🔓 [AUTH CALLBACK STEP 18] Redirect URL: ${frontendUrl}/dashboard`);
+      res.redirect(`${frontendUrl}/dashboard`);
+    });
   } catch (error) {
     console.error("OAuth callback error:", error);
     res.status(500).json({ error: "Authentication failed" });

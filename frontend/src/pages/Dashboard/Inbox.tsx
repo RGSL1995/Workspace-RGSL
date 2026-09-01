@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import EmailDetail from '../../components/EmailDetail';
 import { useEmailSocket } from '../../hooks/useEmailSocket';
 
+const API_URL = import.meta.env.VITE_API_URL || `${API_URL}';
+
 interface EmailItem {
   _id: string;
   subject: string;
@@ -29,7 +31,7 @@ export default function Inbox() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/auth/me', {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -71,12 +73,12 @@ export default function Inbox() {
       if (pageNum === 1) {
         setLoading(true);
       }
-      let url = `http://localhost:5000/api/ai/all-emails?page=${pageNum}`;
+      let url = `${API_URL}/api/ai/all-emails?page=${pageNum}`;
 
       if (filter === 'important') {
-        url = `http://localhost:5000/api/ai/important-emails?page=${pageNum}`;
+        url = `${API_URL}/api/ai/important-emails?page=${pageNum}`;
       } else if (filter === 'unread') {
-        url = `http://localhost:5000/api/ai/unread-emails?page=${pageNum}`;
+        url = `${API_URL}/api/ai/unread-emails?page=${pageNum}`;
       }
 
       const response = await fetch(url, {

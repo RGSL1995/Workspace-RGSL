@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, X, AlertCircle, Star, Eye, EyeOff, UserPlus } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || '${API_URL}';
+
 interface Attachment {
   filename: string;
   mimeType: string;
@@ -62,7 +64,7 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`http://localhost:5000/api/ai/email/${emailId}`, {
+      const response = await fetch(`${API_URL}/api/ai/email/${emailId}`, {
         credentials: 'include',
       });
 
@@ -85,7 +87,7 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
       setDownloadingAttachmentId(attachment.attachmentId);
 
       const response = await fetch(
-        `http://localhost:5000/api/ai/attachment/${emailId}/${attachment.attachmentId}`,
+        `${API_URL}/api/ai/attachment/${emailId}/${attachment.attachmentId}`,
         { credentials: 'include' }
       );
 
@@ -122,7 +124,7 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
     if (!email) return;
     try {
       setActionLoading(true);
-      const response = await fetch(`http://localhost:5000/api/ai/email/${emailId}/read`, {
+      const response = await fetch(`${API_URL}/api/ai/email/${emailId}/read`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -143,7 +145,7 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
     if (!email) return;
     try {
       setActionLoading(true);
-      const response = await fetch(`http://localhost:5000/api/ai/email/${emailId}/star`, {
+      const response = await fetch(`${API_URL}/api/ai/email/${emailId}/star`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -164,7 +166,7 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
     try {
       setEmployeesLoading(true);
       console.log('📋 Fetching employees...');
-      const response = await fetch('http://localhost:5000/api/employees', {
+      const response = await fetch('${API_URL}/api/employees', {
         credentials: 'include',
       });
 
@@ -199,7 +201,7 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
 
     try {
       setAssignmentLoading(true);
-      const response = await fetch(`http://localhost:5000/api/ai/email/${emailId}/assign`, {
+      const response = await fetch(`${API_URL}/api/ai/email/${emailId}/assign`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

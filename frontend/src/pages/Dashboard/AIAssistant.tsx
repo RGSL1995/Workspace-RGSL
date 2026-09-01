@@ -1,6 +1,8 @@
 import { Send, Loader } from 'lucide-react';
 import { useState } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 interface Message {
   id: string;
   type: 'user' | 'assistant';
@@ -36,7 +38,7 @@ export default function AIAssistant() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/ai/ask', {
+      const response = await fetch(`${API_URL}/api/ai/ask`, {
         method: 'POST',
         credentials: 'include',
         headers: {

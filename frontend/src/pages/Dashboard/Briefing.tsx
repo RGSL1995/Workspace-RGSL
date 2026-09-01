@@ -1,6 +1,8 @@
 import { Lightbulb, Clock, AlertCircle, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 interface BriefingData {
   employee_name: string;
   active_tasks: number;
@@ -21,7 +23,7 @@ export default function Briefing() {
   const fetchBriefing = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/ai/briefing', {
+      const response = await fetch(`${API_URL}/api/ai/briefing`, {
         credentials: 'include',
       });
 
