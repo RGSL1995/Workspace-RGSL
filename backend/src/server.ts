@@ -40,6 +40,7 @@ app.use(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      domain: process.env.NODE_ENV === "production" ? ".rgslgroup.com" : undefined,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
   })
