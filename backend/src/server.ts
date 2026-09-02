@@ -4,6 +4,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import session from "express-session";
+import MongoStore from "connect-mongo";
 import passport from "passport";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
@@ -46,12 +47,17 @@ if (process.env.NODE_ENV === "production") {
 console.log(`🔐 [SESSION CONFIG] Cookie domain:`, cookieConfig.domain || "default");
 console.log(`🔐 [SESSION CONFIG] Secure:`, cookieConfig.secure);
 console.log(`🔐 [SESSION CONFIG] SameSite:`, cookieConfig.sameSite);
+console.log(`🔐 [SESSION CONFIG] Using MongoDB for session storage`);
 
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your_session_secret_key",
     resave: false,
     saveUninitialized: false,
+    store: new MongoStore({
+      mongoUrl: process.env.MONGODB_URI || "mongodb://localhost:27017/task-management",
+      touchAfter: 24 * 3600, // Lazy session update (in seconds)
+    }),
     cookie: cookieConfig,
   })
 );
