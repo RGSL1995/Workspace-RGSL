@@ -20,10 +20,34 @@ import { startEmailScheduler } from "./jobs/emailScheduler";
 
 const app = express();
 
-// CORS with credentials
+// Trust reverse proxy (e.g. Nginx, Cloudflare, Railway) for HTTPS detection and secure cookies
+app.set("trust proxy", 1);
+
+// CORS with credentials and multi-origin support
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://rgslgroup.com",
+  "https://tasks.rgslgroup.com",
+  "https://api.rgslgroup.com",
+].filter(Boolean) as string[];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".rgslgroup.com") ||
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1")
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
@@ -32,16 +56,19 @@ app.use(
 app.use(express.json());
 
 // Session management
+const isProduction = process.env.NODE_ENV === "production";
 const cookieConfig: any = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
-// In production, set domain to allow cross-subdomain sharing
-if (process.env.NODE_ENV === "production") {
-  cookieConfig.domain = "rgslgroup.com"; // Without leading dot for explicit domain
+// In production, set domain to allow cross-subdomain sharing if configured or on rgslgroup.com
+if (process.env.COOKIE_DOMAIN) {
+  cookieConfig.domain = process.env.COOKIE_DOMAIN;
+} else if (isProduction && (process.env.FRONTEND_URL?.includes("rgslgroup.com") || !process.env.FRONTEND_URL)) {
+  cookieConfig.domain = ".rgslgroup.com";
 }
 
 console.log(`🔐 [SESSION CONFIG] Cookie domain:`, cookieConfig.domain || "default");

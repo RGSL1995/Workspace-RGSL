@@ -166,7 +166,7 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
     try {
       setEmployeesLoading(true);
       console.log('📋 Fetching employees...');
-      const response = await fetch('${API_URL}/api/employees', {
+      const response = await fetch(`${API_URL}/api/employees`, {
         credentials: 'include',
       });
 

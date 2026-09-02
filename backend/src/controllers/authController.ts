@@ -14,8 +14,8 @@ export const googleAuthCallback = async (
   try {
     console.log(`\n🔓 [AUTH CALLBACK STEP 1] Callback handler started`);
 
-    const { id, emails, displayName, name } = req.user as any;
-    const email = emails[0]?.value;
+    const userObj = req.user as any;
+    const email = userObj?.email || userObj?.emails?.[0]?.value;
 
     console.log(`🔓 [AUTH CALLBACK STEP 2] Email extracted: ${email}`);
 
@@ -26,8 +26,7 @@ export const googleAuthCallback = async (
     }
 
     console.log(`🔓 [AUTH CALLBACK STEP 3] Looking up employee`);
-    // Find or create employee
-    let employee = await Employee.findOne({ email });
+    let employee = userObj?._id ? userObj : await Employee.findOne({ email });
     let isNewEmployee = false;
     console.log(`🔓 [AUTH CALLBACK STEP 4] Employee lookup: ${employee ? "FOUND" : "NOT FOUND"}`);
 
@@ -42,12 +41,12 @@ export const googleAuthCallback = async (
         role: "department_person",
         companies: ["RGSL"],
         departments: ["Finance"],
-        google_id: id,
+        google_id: googleProfile.id || googleProfile.google_id,
         google_profile: {
-          picture: googleProfile.photos?.[0]?.value,
-          phone: googleProfile.phoneNumbers?.[0]?.value,
-          locale: googleProfile._json?.locale,
-          gender: googleProfile._json?.gender,
+          picture: googleProfile.photos?.[0]?.value || googleProfile.google_profile?.picture,
+          phone: googleProfile.phoneNumbers?.[0]?.value || googleProfile.google_profile?.phone,
+          locale: googleProfile._json?.locale || googleProfile.google_profile?.locale,
+          gender: googleProfile._json?.gender || googleProfile.google_profile?.gender,
         },
         is_active: true,
         notification_email: true,
@@ -73,7 +72,7 @@ export const googleAuthCallback = async (
             company: "RGSL",
             owner_id: employee._id,
             authorized_employees: [employee._id],
-            google_id: id,
+            google_id: googleProfile.id || googleProfile.google_id,
             google_tokens: {
               access_token: accessToken,
               refresh_token: refreshToken,
@@ -92,8 +91,8 @@ export const googleAuthCallback = async (
       }
     } else {
       // Update Google ID if not already set
-      if (!employee.google_id) {
-        employee.google_id = id;
+      if (!employee.google_id && userObj.id) {
+        employee.google_id = userObj.id;
         await employee.save();
       }
     }
