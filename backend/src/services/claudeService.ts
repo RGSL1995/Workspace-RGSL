@@ -74,7 +74,7 @@ Respond in JSON format:
 }`;
 
     const message = await getClient().messages.create({
-      model: "claude-opus-5",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 500,
       messages: [
         {
@@ -149,7 +149,7 @@ Provide a brief, personalized daily briefing (2-3 sentences) with:
 Be concise and actionable.`;
 
     const message = await getClient().messages.create({
-      model: "claude-opus-5",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 300,
       messages: [
         {
@@ -193,7 +193,7 @@ Provide brief management insights (2-3 sentences):
 Be concise and actionable.`;
 
     const message = await getClient().messages.create({
-      model: "claude-opus-5",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 300,
       messages: [
         {
@@ -234,7 +234,7 @@ Current context:
 Be helpful, concise, and professional. Provide actionable advice.`;
 
     const message = await getClient().messages.create({
-      model: "claude-opus-5",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 500,
       system: systemPrompt,
       messages: [
