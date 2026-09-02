@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import EmailDetail from '../../components/EmailDetail';
 import { useEmailSocket } from '../../hooks/useEmailSocket';
 
-const API_URL = import.meta.env.VITE_API_URL || `${API_URL}';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface EmailItem {
   _id: string;

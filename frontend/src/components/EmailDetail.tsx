@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, X, AlertCircle, Star, Eye, EyeOff, UserPlus } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || '${API_URL}';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface Attachment {
   filename: string;
