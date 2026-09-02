@@ -31,18 +31,28 @@ app.use(
 app.use(express.json());
 
 // Session management
+const cookieConfig: any = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
+// In production, set domain to allow cross-subdomain sharing
+if (process.env.NODE_ENV === "production") {
+  cookieConfig.domain = "rgslgroup.com"; // Without leading dot for explicit domain
+}
+
+console.log(`🔐 [SESSION CONFIG] Cookie domain:`, cookieConfig.domain || "default");
+console.log(`🔐 [SESSION CONFIG] Secure:`, cookieConfig.secure);
+console.log(`🔐 [SESSION CONFIG] SameSite:`, cookieConfig.sameSite);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your_session_secret_key",
     resave: false,
     saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      domain: process.env.NODE_ENV === "production" ? ".rgslgroup.com" : undefined,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    },
+    cookie: cookieConfig,
   })
 );
 
