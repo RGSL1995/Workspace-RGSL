@@ -43,79 +43,15 @@ export const classifyEmail = async (
   employeeRole: string,
   employeeDepartments: string[]
 ): Promise<EmailClassificationResult> => {
-  try {
-    const prompt = `You are an email classification system for a corporate task management platform (RGSL Group).
+  // ⏸️ Claude classification disabled to preserve API credits
+  console.log(`📭 [CLASSIFY] Skipping Claude classification (disabled to preserve credits)`);
 
-Classify the following email into one of these categories and provide a confidence score (0-1):
-- "important": Requires attention, from management, time-sensitive
-- "action_required": Needs employee response/action
-- "informational": FYI/notification, no action needed
-- "low_priority": Can be addressed later
-
-Employee context:
-- Role: ${employeeRole}
-- Departments: ${employeeDepartments.join(", ")}
-
-Email details:
-From: ${from}
-Subject: ${subject}
-Body: ${body.substring(0, 1000)}${body.length > 1000 ? "..." : ""}
-
-Respond in JSON format:
-{
-  "classification": "important|action_required|informational|low_priority",
-  "confidence_score": 0.0-1.0,
-  "reasoning": "brief explanation",
-  "suggested_task": {
-    "title": "task title if applicable",
-    "description": "task description",
-    "priority": "low|medium|high|critical"
-  } or null
-}`;
-
-    const message = await getClient().messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 500,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
-
-    const responseText =
-      message.content[0].type === "text" ? message.content[0].text : "";
-
-    // Parse JSON response
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error("🤖 [CLAUDE] Invalid JSON format. Response:", responseText.substring(0, 200));
-      // Return default classification if parsing fails
-      return {
-        classification: "informational",
-        confidence_score: 0,
-        reasoning: "Failed to parse Claude response",
-      };
-    }
-
-    const result = JSON.parse(jsonMatch[0]);
-
-    return {
-      classification: result.classification,
-      confidence_score: result.confidence_score,
-      reasoning: result.reasoning,
-      suggested_task: result.suggested_task || undefined,
-    };
-  } catch (error) {
-    console.error("Email classification error:", error);
-    // Default to informational if classification fails
-    return {
-      classification: "informational",
-      confidence_score: 0,
-      reasoning: "Classification failed, defaulting to informational",
-    };
-  }
+  // Return default classification
+  return {
+    classification: "informational",
+    confidence_score: 0.5,
+    reasoning: "Default classification (Claude disabled to preserve credits)",
+  };
 };
 
 /**
