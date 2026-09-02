@@ -108,6 +108,8 @@ export const googleAuthCallback = async (
       }
 
       console.log(`🔓 [AUTH CALLBACK STEP 9] Passport session established`);
+      console.log(`🔓 [AUTH CALLBACK] Session ID: ${req.sessionID}`);
+      console.log(`🔓 [AUTH CALLBACK] req.user: ${(req.user as any)?._id}`);
 
       // Also set custom session properties
       req.session.userId = employee._id.toString();
@@ -115,9 +117,18 @@ export const googleAuthCallback = async (
       req.session.userName = employee.name;
       console.log(`✅ [AUTH CALLBACK] Custom session properties set for: ${employee.email}`);
 
-      completeCallback().catch((err) => {
-        console.error(`❌ [AUTH CALLBACK] Callback error:`, err);
-        res.status(500).json({ error: "Authentication callback failed" });
+      // Save session to MongoDB before continuing
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error(`❌ [AUTH CALLBACK] Session save failed:`, saveErr);
+          return res.status(500).json({ error: "Session save failed" });
+        }
+
+        console.log(`✅ [AUTH CALLBACK STEP 9.5] Session saved to MongoDB`);
+        completeCallback().catch((err) => {
+          console.error(`❌ [AUTH CALLBACK] Callback error:`, err);
+          res.status(500).json({ error: "Authentication callback failed" });
+        });
       });
     });
 
