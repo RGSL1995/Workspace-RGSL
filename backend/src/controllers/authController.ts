@@ -147,7 +147,7 @@ export const googleAuthCallback = async (
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
       console.log(`🔓 [AUTH CALLBACK STEP 15] Redirect URL: ${frontendUrl}/dashboard`);
       res.redirect(`${frontendUrl}/dashboard`);
-    });
+    }
   } catch (error) {
     console.error("OAuth callback error:", error);
     res.status(500).json({ error: "Authentication failed" });
