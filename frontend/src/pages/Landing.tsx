@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+const PIN_LOGIN_DELAY = 500; // ms to wait for session to be established
+
 export default function Landing() {
-  const { authenticated } = useAuth();
+  const { authenticated, checkAuth } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loginMode, setLoginMode] = useState<'google' | 'pin'>('google');
+  const [pinInput, setPinInput] = useState('');
+  const [pinLoading, setPinLoading] = useState(false);
+  const [pinError, setPinError] = useState('');
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
@@ -27,10 +33,67 @@ export default function Landing() {
 
   const closeMenu = () => setMenuOpen(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleGoogleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     window.location.href = `${apiUrl}/api/auth/google`;
   };
+
+  const handlePinSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log('🔐 [FRONTEND PIN] Submitting PIN login');
+
+    if (!pinInput) {
+      console.log('❌ [FRONTEND PIN] PIN is empty');
+      setPinError('PIN is required');
+      return;
+    }
+    if (!/^\d{4,6}$/.test(pinInput)) {
+      console.log('❌ [FRONTEND PIN] PIN format invalid:', pinInput);
+      setPinError('PIN must be 4-6 digits');
+      return;
+    }
+
+    setPinLoading(true);
+    setPinError('');
+
+    try {
+      console.log('🔐 [FRONTEND PIN] Sending to:', `${apiUrl}/api/auth/verify-pin-only`);
+      const response = await fetch(`${apiUrl}/api/auth/verify-pin-only`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pinInput }),
+      });
+
+      console.log('🔐 [FRONTEND PIN] Response status:', response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ [FRONTEND PIN] Login successful, verifying auth');
+        console.log('✅ [FRONTEND PIN] User data:', data.employee);
+
+        // Wait a moment for session to be established, then verify auth and navigate
+        await new Promise(resolve => setTimeout(resolve, PIN_LOGIN_DELAY));
+        console.log('🔐 [FRONTEND PIN] Verifying authentication...');
+        await checkAuth();
+
+        console.log('✅ [FRONTEND PIN] Auth verified, navigating to dashboard');
+        navigate('/dashboard');
+      } else {
+        console.log('❌ [FRONTEND PIN] Response not OK');
+        const data = await response.json();
+        console.log('❌ [FRONTEND PIN] Error:', data.error);
+        setPinError(data.error || 'Invalid PIN');
+      }
+    } catch (error) {
+      console.error('❌ [FRONTEND PIN] Network error:', error);
+      setPinError('Network error during PIN login');
+    } finally {
+      setPinLoading(false);
+    }
+  };
+
+  const handleSubmit = loginMode === 'google' ? handleGoogleSubmit : handlePinSubmit;
 
   const menuItems = [
     { label: 'Overview', href: '#overview' },
@@ -565,20 +628,74 @@ export default function Landing() {
             </div>
 
             <form className="form" onSubmit={handleSubmit} noValidate>
-              <label htmlFor="email" className="form__label">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                className="form__input"
-                placeholder="Email"
-                required
-              />
-              <button type="submit" className="btn">
-                ENTER
-              </button>
+              {loginMode === 'google' ? (
+                <>
+                  <label htmlFor="email" className="form__label">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    className="form__input"
+                    placeholder="Email"
+                    required
+                  />
+                  <button type="submit" className="btn">
+                    ENTER
+                  </button>
+                </>
+              ) : (
+                <>
+                  <label htmlFor="pin" className="form__label">
+                    PIN (4-6 digits)
+                  </label>
+                  <input
+                    id="pin"
+                    type="password"
+                    className="form__input"
+                    placeholder="PIN"
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    maxLength={6}
+                    required
+                    autoFocus
+                  />
+                  {pinError && (
+                    <div style={{ color: 'rgba(239,68,68,0.9)', fontSize: '12px', marginTop: '8px' }}>
+                      {pinError}
+                    </div>
+                  )}
+                  <button type="submit" className="btn" disabled={pinLoading}>
+                    {pinLoading ? 'VERIFYING...' : 'ENTER'}
+                  </button>
+                </>
+              )}
             </form>
+
+            <div style={{ marginTop: '16px', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginMode(loginMode === 'google' ? 'pin' : 'google');
+                  setPinInput('');
+                  setPinError('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'rgba(255,255,255,0.55)',
+                  fontSize: '12px',
+                  fontFamily: 'var(--font-mono)',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  transition: 'color 0.25s ease',
+                  padding: '4px 0',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.78)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.55)')}>
+                {loginMode === 'google' ? 'Use PIN instead?' : 'Use Google instead?'}
+              </button>
+            </div>
           </div>
         </div>
 

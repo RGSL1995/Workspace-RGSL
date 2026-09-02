@@ -22,6 +22,10 @@ export interface IEmployee extends Document {
     gender?: string;
   };
 
+  // PIN Login (optional, for faster re-authentication)
+  pin_hash?: string; // Hashed PIN for login
+  pin_created_at?: Date; // When PIN was created
+
   // Email Connections (moved to separate model)
   // Use EmailConnection model instead of storing here
 
@@ -93,6 +97,16 @@ const EmployeeSchema = new Schema<IEmployee>(
       phone: String,
       locale: String,
       gender: String,
+    },
+    pin_hash: {
+      type: String,
+      sparse: true,
+      default: null,
+    },
+    pin_created_at: {
+      type: Date,
+      sparse: true,
+      default: null,
     },
     notification_email: {
       type: Boolean,

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Employee from "../models/Employee";
 import EmailConnection from "../models/EmailConnection";
 import { syncEmailsFromConnection } from "../services/gmailService";
+import { hashPin, verifyPin, validatePinFormat } from "../utils/pinUtil";
 
 export const googleAuthCallback = async (
   req: Request,
@@ -211,5 +212,230 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error) {
     res.status(500).json({ error: "Logout failed" });
+  }
+};
+
+/**
+ * Set PIN during first login (after OAuth)
+ */
+export const setPin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { pin } = req.body;
+    const userId = (req.user as any)?._id || req.session.userId;
+
+    if (!userId) {
+      console.log(`❌ [PIN] Not authenticated`);
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+
+    if (!pin || typeof pin !== 'string') {
+      res.status(400).json({ error: "PIN is required" });
+      return;
+    }
+
+    if (!validatePinFormat(pin)) {
+      res.status(400).json({ error: "PIN must be 4-6 digits" });
+      return;
+    }
+
+    const employee = await Employee.findById(userId);
+    if (!employee) {
+      res.status(404).json({ error: "Employee not found" });
+      return;
+    }
+
+    console.log(`🔐 [PIN] Setting PIN for ${employee.email}`);
+    employee.pin_hash = await hashPin(pin);
+    employee.pin_created_at = new Date();
+    await employee.save();
+
+    console.log(`✅ [PIN] PIN set successfully for ${employee.email}`);
+    res.json({ message: "PIN set successfully" });
+  } catch (error) {
+    console.error("❌ [PIN] Set PIN error:", error);
+    res.status(500).json({ error: "Failed to set PIN" });
+  }
+};
+
+/**
+ * Login with email and PIN
+ */
+export const verifyPinLogin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, pin } = req.body;
+
+    if (!email || !pin) {
+      res.status(400).json({ error: "Email and PIN are required" });
+      return;
+    }
+
+    if (!validatePinFormat(pin)) {
+      res.status(400).json({ error: "Invalid PIN format" });
+      return;
+    }
+
+    console.log(`🔐 [PIN LOGIN] Attempting login for ${email}`);
+    const employee = await Employee.findOne({ email: email.toLowerCase() });
+
+    if (!employee) {
+      console.log(`❌ [PIN LOGIN] Employee not found: ${email}`);
+      res.status(401).json({ error: "Invalid email or PIN" });
+      return;
+    }
+
+    if (!employee.pin_hash) {
+      console.log(`❌ [PIN LOGIN] No PIN set for ${email}`);
+      res.status(401).json({ error: "PIN not configured for this account" });
+      return;
+    }
+
+    const isValidPin = await verifyPin(pin, employee.pin_hash);
+    if (!isValidPin) {
+      console.log(`❌ [PIN LOGIN] Invalid PIN for ${email}`);
+      res.status(401).json({ error: "Invalid email or PIN" });
+      return;
+    }
+
+    console.log(`✅ [PIN LOGIN] PIN verified for ${email}, establishing session`);
+
+    // Establish session
+    req.login(employee, (err) => {
+      if (err) {
+        console.error(`❌ [PIN LOGIN] Login failed:`, err);
+        return res.status(500).json({ error: "Login failed" });
+      }
+
+      req.session.userId = employee._id.toString();
+      req.session.userEmail = employee.email;
+      req.session.userName = employee.name;
+
+      console.log(`✅ [PIN LOGIN] Session established for ${employee.email}`);
+
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error(`❌ [PIN LOGIN] Session save failed:`, saveErr);
+          return res.status(500).json({ error: "Session save failed" });
+        }
+
+        console.log(`✅ [PIN LOGIN] PIN login successful for ${email}`);
+        res.json({
+          message: "Login successful",
+          employee: {
+            _id: employee._id,
+            name: employee.name,
+            email: employee.email,
+            role: employee.role,
+          }
+        });
+      });
+    });
+  } catch (error) {
+    console.error("❌ [PIN LOGIN] Error:", error);
+    res.status(500).json({ error: "Login failed" });
+  }
+};
+
+/**
+ * Login with PIN only (no email required)
+ */
+export const verifyPinOnly = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { pin } = req.body;
+
+    console.log(`\n🔐🔐🔐 [PIN-ONLY LOGIN] START 🔐🔐🔐`);
+    console.log(`PIN received: ${pin ? pin.length + ' digits' : 'MISSING'}`);
+
+    if (!pin) {
+      console.log(`❌ [PIN-ONLY LOGIN STEP 1] PIN is missing`);
+      res.status(400).json({ error: "PIN is required" });
+      return;
+    }
+
+    if (!validatePinFormat(pin)) {
+      console.log(`❌ [PIN-ONLY LOGIN STEP 2] PIN format invalid: ${pin}`);
+      res.status(400).json({ error: "Invalid PIN format" });
+      return;
+    }
+
+    console.log(`✅ [PIN-ONLY LOGIN STEP 1] PIN format valid`);
+    console.log(`🔐 [PIN-ONLY LOGIN STEP 2] Searching for matching PIN`);
+
+    // Find employee by PIN hash - this requires iterating and comparing
+    const employees = await Employee.find({ pin_hash: { $exists: true } });
+    console.log(`🔐 [PIN-ONLY LOGIN STEP 3] Found ${employees.length} employees with PIN set`);
+
+    let employee = null;
+    for (const emp of employees) {
+      const isMatch = await verifyPin(pin, emp.pin_hash);
+      if (isMatch) {
+        console.log(`✅ [PIN-ONLY LOGIN STEP 4] PIN matched for ${emp.email}`);
+        employee = emp;
+        break;
+      }
+    }
+
+    if (!employee) {
+      console.log(`❌ [PIN-ONLY LOGIN STEP 4] No employee found with matching PIN`);
+      res.status(401).json({ error: "Invalid PIN" });
+      return;
+    }
+
+    console.log(`✅ [PIN-ONLY LOGIN STEP 5] PIN verified for ${employee.email}, establishing session`);
+
+    // Establish session
+    req.login(employee, (err) => {
+      if (err) {
+        console.error(`❌ [PIN-ONLY LOGIN STEP 6] req.login failed:`, err);
+        return res.status(500).json({ error: "Login failed" });
+      }
+
+      console.log(`✅ [PIN-ONLY LOGIN STEP 6] Passport session established`);
+
+      req.session.userId = employee._id.toString();
+      req.session.userEmail = employee.email;
+      req.session.userName = employee.name;
+
+      console.log(`✅ [PIN-ONLY LOGIN STEP 7] Custom session properties set`);
+      console.log(`   Session ID: ${req.sessionID}`);
+      console.log(`   User ID: ${req.session.userId}`);
+
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error(`❌ [PIN-ONLY LOGIN STEP 8] Session save failed:`, saveErr);
+          return res.status(500).json({ error: "Session save failed" });
+        }
+
+        console.log(`✅ [PIN-ONLY LOGIN STEP 8] Session saved to MongoDB`);
+        console.log(`✅ [PIN-ONLY LOGIN STEP 9] Triggering email sync in background`);
+
+        // Trigger email sync in background (don't wait for it)
+        EmailConnection.findOne({ owner_id: employee._id })
+          .then((emailConnection) => {
+            if (emailConnection) {
+              console.log(`📧 [PIN-ONLY LOGIN] Starting email sync for ${employee.email}`);
+              syncEmailsFromConnection(emailConnection._id.toString())
+                .then(() => console.log(`✅ [PIN-ONLY LOGIN] Email sync completed for ${employee.email}`))
+                .catch((error) => console.error(`❌ [PIN-ONLY LOGIN] Email sync error:`, error));
+            }
+          })
+          .catch((error) => console.error(`❌ [PIN-ONLY LOGIN] Error finding email connection:`, error));
+
+        console.log(`✅ [PIN-ONLY LOGIN] SUCCESS - Sending response to client`);
+
+        res.json({
+          message: "Login successful",
+          employee: {
+            _id: employee._id,
+            name: employee.name,
+            email: employee.email,
+            role: employee.role,
+          }
+        });
+      });
+    });
+  } catch (error) {
+    console.error("❌ [PIN-ONLY LOGIN] Exception:", error);
+    res.status(500).json({ error: "Login failed" });
   }
 };

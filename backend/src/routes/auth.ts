@@ -1,6 +1,6 @@
 import express from "express";
 import passport from "passport";
-import { getCurrentUser, logout, googleAuthCallback } from "../controllers/authController";
+import { getCurrentUser, logout, googleAuthCallback, setPin, verifyPinLogin, verifyPinOnly } from "../controllers/authController";
 
 const router = express.Router();
 
@@ -52,5 +52,10 @@ router.get("/status", (req, res) => {
     email: req.session.userEmail,
   });
 });
+
+// PIN Login routes
+router.post("/set-pin", setPin);
+router.post("/verify-pin", verifyPinLogin);
+router.post("/verify-pin-only", verifyPinOnly);
 
 export default router;

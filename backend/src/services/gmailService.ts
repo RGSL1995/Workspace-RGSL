@@ -3,6 +3,7 @@ import EmailConnection from "../models/EmailConnection";
 import Email from "../models/Email";
 import { classifyEmail } from "./claudeService";
 import Employee from "../models/Employee";
+import { ensureTokenFresh } from "../utils/tokenRefresh";
 
 /**
  * Initialize Gmail API client
@@ -43,16 +44,31 @@ export const syncEmailsFromConnection = async (
     console.log(`✅ [SYNC] Found connection for: ${connection.email}`);
     console.log(`🔑 [SYNC] Access token exists: ${!!connection.google_tokens.access_token}`);
 
+    // Refresh token if expired
+    console.log(`🔄 [SYNC] Checking token freshness...`);
+    const tokenFresh = await ensureTokenFresh(connectionId);
+    if (!tokenFresh) {
+      console.error(`❌ [SYNC ERROR] Failed to refresh token for ${connection.email}`);
+      connection.sync_status = "error";
+      await connection.save();
+      throw new Error("Token refresh failed");
+    }
+    console.log(`✅ [SYNC] Token is fresh`);
+
+    // Reload connection to get updated token
+    const updatedConnection = await EmailConnection.findById(connectionId);
+    if (!updatedConnection) throw new Error("Connection not found after refresh");
+
     // Update sync status
-    connection.sync_status = "syncing";
-    await connection.save();
+    updatedConnection.sync_status = "syncing";
+    await updatedConnection.save();
     console.log(`⏳ [SYNC] Status set to: syncing`);
 
-    const gmail = getGmailClient(connection.google_tokens.access_token);
+    const gmail = getGmailClient(updatedConnection.google_tokens.access_token);
     console.log(`🔐 [SYNC] Gmail client initialized`);
 
     // Get emails from last sync or from 30 days ago (for first sync to get all history)
-    const lastSynced = connection.last_synced || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const lastSynced = updatedConnection.last_synced || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const query = `after:${Math.floor(lastSynced.getTime() / 1000)}`;
     console.log(`📅 [SYNC] Query: ${query} (lastSynced: ${lastSynced.toISOString()})`);
 
@@ -131,15 +147,15 @@ export const syncEmailsFromConnection = async (
       let employeeRole = "department_person";
       let employeeDepartments = [];
 
-      if (connection.owner_id) {
-        const employee = await Employee.findById(connection.owner_id);
+      if (updatedConnection.owner_id) {
+        const employee = await Employee.findById(updatedConnection.owner_id);
         if (employee) {
           employeeRole = employee.role;
           employeeDepartments = employee.departments;
         }
-      } else if (connection.authorized_employees.length > 0) {
+      } else if (updatedConnection.authorized_employees.length > 0) {
         // For shared mailboxes, use first authorized employee
-        const employee = await Employee.findById(connection.authorized_employees[0]);
+        const employee = await Employee.findById(updatedConnection.authorized_employees[0]);
         if (employee) {
           employeeRole = employee.role;
           employeeDepartments = employee.departments;
@@ -184,11 +200,11 @@ export const syncEmailsFromConnection = async (
     }
 
     // Update sync status
-    connection.last_synced = new Date();
-    connection.sync_status = "idle";
-    connection.error_message = undefined;
-    await connection.save();
-    console.log(`✅ [SYNC COMPLETE] Synced ${messages.length} emails for ${connection.email}`);
+    updatedConnection.last_synced = new Date();
+    updatedConnection.sync_status = "idle";
+    updatedConnection.error_message = undefined;
+    await updatedConnection.save();
+    console.log(`✅ [SYNC COMPLETE] Synced ${messages.length} emails for ${updatedConnection.email}`);
   } catch (error) {
     console.error(`❌ [SYNC ERROR] ${error instanceof Error ? error.message : String(error)}`);
 

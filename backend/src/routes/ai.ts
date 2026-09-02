@@ -545,14 +545,21 @@ router.patch("/email/:emailId/assign", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Employee not found" });
     }
 
+    // Get assigner (current user) to get their department
+    const assigner = await Employee.findById(req.session.userId);
+    if (!assigner) {
+      return res.status(404).json({ error: "Assigner not found" });
+    }
+
     // Create task from email
     const task = new Task({
       title: email.subject,
       description: `Email from: ${email.from}\n\n${email.body.substring(0, 500)}...`,
+      assigner_id: new mongoose.Types.ObjectId(req.session.userId as string),
       assignee_id: new mongoose.Types.ObjectId(assignedToId),
+      department: assigner.departments?.[0] || "Finance", // Use assigner's first department
       status: "open",
       priority: email.classification === "important" ? "high" : "medium",
-      created_by: new mongoose.Types.ObjectId(req.session.userId),
       tags: [email.classification],
       deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
     });
@@ -582,8 +589,15 @@ router.patch("/email/:emailId/assign", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Assign email error:", error);
-    res.status(500).json({ error: "Failed to assign email" });
+    console.error("❌ [ASSIGN EMAIL] Error:", error);
+    if (error instanceof Error) {
+      console.error("   Message:", error.message);
+      console.error("   Stack:", error.stack);
+    }
+    res.status(500).json({
+      error: "Failed to assign email",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 

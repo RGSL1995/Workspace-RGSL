@@ -6,6 +6,7 @@ interface Employee {
   email: string;
   role: 'super_admin' | 'department_head' | 'department_person';
   departments: string[];
+  pin_hash?: string | null;
 }
 
 interface AuthContextType {

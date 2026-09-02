@@ -16,6 +16,8 @@ import taskRoutes from "./routes/tasks";
 import authRoutes from "./routes/auth";
 import emailConnectionRoutes from "./routes/emailConnections";
 import aiRoutes from "./routes/ai";
+import departmentRoutes from "./routes/departments";
+import analyticsRoutes from "./routes/analytics";
 import { startEmailScheduler } from "./jobs/emailScheduler";
 
 const app = express();
@@ -107,6 +109,8 @@ app.use("/api/employees", employeeRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/email-connections", emailConnectionRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/departments", departmentRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
