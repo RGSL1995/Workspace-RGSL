@@ -115,11 +115,13 @@ export const googleAuthCallback = async (
       req.session.userName = employee.name;
       console.log(`✅ [AUTH CALLBACK] Custom session properties set for: ${employee.email}`);
 
-      completeCallback();
+      completeCallback().catch((err) => {
+        console.error(`❌ [AUTH CALLBACK] Callback error:`, err);
+        res.status(500).json({ error: "Authentication callback failed" });
+      });
     });
 
-    function completeCallback() {
-
+    async function completeCallback() {
       // Auto-sync emails if email connection exists
       console.log(`🔓 [AUTH CALLBACK STEP 10] Checking for email connections to sync`);
       try {
