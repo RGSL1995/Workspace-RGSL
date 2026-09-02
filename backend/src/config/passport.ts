@@ -163,11 +163,24 @@ passport.use(
 );
 
 passport.serializeUser((user: any, done) => {
-  done(null, user.id);
+  console.log(`🔐 [SERIALIZE] Serializing user: ${user._id || user.id}`);
+  done(null, user._id || user.id);
 });
 
-passport.deserializeUser((id, done) => {
-  done(null, { id });
+passport.deserializeUser(async (id: any, done) => {
+  try {
+    console.log(`🔐 [DESERIALIZE] Deserializing user: ${id}`);
+    const employee = await Employee.findById(id);
+    if (employee) {
+      done(null, employee);
+    } else {
+      console.warn(`⚠️ [DESERIALIZE] Employee not found: ${id}`);
+      done(null, null);
+    }
+  } catch (error) {
+    console.error(`❌ [DESERIALIZE] Error:`, error);
+    done(error);
+  }
 });
 
 export default passport;

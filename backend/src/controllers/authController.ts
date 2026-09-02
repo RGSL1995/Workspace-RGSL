@@ -98,65 +98,52 @@ export const googleAuthCallback = async (
       }
     }
 
-    console.log(`🔓 [AUTH CALLBACK STEP 8] Setting session`);
-    // Set session user
-    req.session.userId = employee._id.toString();
-    req.session.userEmail = employee.email;
-    req.session.userName = employee.name;
-    console.log(`🔓 [AUTH CALLBACK STEP 9] Session set for: ${employee.email}`);
-    console.log(`   Session ID: ${req.session.userId}`);
+    console.log(`🔓 [AUTH CALLBACK STEP 8] Establishing Passport session`);
 
-    // Auto-sync emails if email connection exists and hasn't been synced recently
-    console.log(`🔓 [AUTH CALLBACK STEP 10] Checking for email connections to sync`);
-    try {
-      const emailConnection = await EmailConnection.findOne({
-        owner_id: employee._id,
-      });
-
-      console.log(`🔓 [AUTH CALLBACK STEP 11] Email connection check: ${emailConnection ? "FOUND" : "NOT FOUND"}`);
-
-      if (emailConnection) {
-        console.log(`🔓 [AUTH CALLBACK STEP 12] Email connection exists: ${emailConnection._id}`);
-        // Only sync if hasn't been synced in last hour
-        const lastSyncTime = emailConnection.last_synced ? new Date(emailConnection.last_synced).getTime() : 0;
-        const hourAgo = Date.now() - 60 * 60 * 1000;
-
-        console.log(`🔓 [AUTH CALLBACK STEP 13] Last sync check - lastSyncTime: ${lastSyncTime}, hourAgo: ${hourAgo}`);
-
-        if (lastSyncTime < hourAgo) {
-          console.log(`🔓 [AUTH CALLBACK STEP 14] Triggering email sync`);
-          // Trigger email sync in background (don't wait for it)
-          syncEmailsFromConnection(emailConnection._id.toString())
-            .then(() => console.log(`✅ [AUTH CALLBACK] Email sync completed for ${email}`))
-            .catch((error) => console.error(`❌ [AUTH CALLBACK] Email sync error:`, error));
-          console.log(`✅ [AUTH CALLBACK STEP 15] Email sync INITIATED for ${email}`);
-        } else {
-          console.log(`⏭️ [AUTH CALLBACK STEP 14] Skipping sync - synced recently`);
-        }
-      } else {
-        console.log(`⚠️ [AUTH CALLBACK STEP 12] No email connection found`);
-      }
-    } catch (syncError) {
-      console.error(`❌ [AUTH CALLBACK] Error initiating email sync:`, syncError);
-      // Don't fail auth if sync fails
-    }
-
-    console.log(`🔓 [AUTH CALLBACK STEP 16] Saving session before redirect`);
-    console.log(`🔓 [AUTH CALLBACK] Session ID: ${req.sessionID}`);
-    console.log(`🔓 [AUTH CALLBACK] Session userId: ${req.session.userId}`);
-
-    req.session.save((err) => {
+    // Use Passport's req.login() to properly establish session
+    req.login(employee, (err) => {
       if (err) {
-        console.error(`❌ [AUTH CALLBACK] Session save failed:`, err);
-        return res.status(500).json({ error: "Session save failed" });
+        console.error(`❌ [AUTH CALLBACK] req.login() failed:`, err);
+        return res.status(500).json({ error: "Session establishment failed" });
       }
 
-      console.log(`🔓 [AUTH CALLBACK STEP 17] Session saved successfully`);
-      console.log(`🔓 [AUTH CALLBACK] Response headers:`, res.getHeaders());
+      console.log(`🔓 [AUTH CALLBACK STEP 9] Passport session established`);
 
-      // Redirect to dashboard
+      // Also set custom session properties
+      req.session.userId = employee._id.toString();
+      req.session.userEmail = employee.email;
+      req.session.userName = employee.name;
+      console.log(`✅ [AUTH CALLBACK] Custom session properties set for: ${employee.email}`);
+
+      completeCallback();
+    });
+
+    function completeCallback() {
+
+      // Auto-sync emails if email connection exists
+      console.log(`🔓 [AUTH CALLBACK STEP 10] Checking for email connections to sync`);
+      try {
+        const emailConnection = await EmailConnection.findOne({
+          owner_id: employee._id,
+        });
+
+        console.log(`🔓 [AUTH CALLBACK STEP 11] Email connection check: ${emailConnection ? "FOUND" : "NOT FOUND"}`);
+
+        if (emailConnection) {
+          console.log(`🔓 [AUTH CALLBACK STEP 12] Email connection exists: ${emailConnection._id}`);
+          // Trigger email sync in background (don't wait)
+          syncEmailsFromConnection(emailConnection._id.toString())
+            .then(() => console.log(`✅ [AUTH CALLBACK] Email sync completed`))
+            .catch((error) => console.error(`❌ [AUTH CALLBACK] Email sync error:`, error));
+          console.log(`✅ [AUTH CALLBACK STEP 13] Email sync INITIATED`);
+        }
+      } catch (syncError) {
+        console.error(`❌ [AUTH CALLBACK] Error with email sync:`, syncError);
+      }
+
+      console.log(`🔓 [AUTH CALLBACK STEP 14] Redirecting to dashboard`);
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-      console.log(`🔓 [AUTH CALLBACK STEP 18] Redirect URL: ${frontendUrl}/dashboard`);
+      console.log(`🔓 [AUTH CALLBACK STEP 15] Redirect URL: ${frontendUrl}/dashboard`);
       res.redirect(`${frontendUrl}/dashboard`);
     });
   } catch (error) {
@@ -170,17 +157,21 @@ export const getCurrentUser = async (
   res: Response
 ): Promise<void> => {
   try {
+    console.log(`🔍 [AUTH ME] Passport req.user:`, req.user ? "EXISTS" : "MISSING");
     console.log(`🔍 [AUTH ME] Session ID: ${req.sessionID}`);
     console.log(`🔍 [AUTH ME] Session userId: ${req.session.userId}`);
-    console.log(`🔍 [AUTH ME] Session data:`, req.session);
 
-    if (!req.session.userId) {
-      console.log(`❌ [AUTH ME] No userId in session`);
+    // Use Passport's req.user first, fall back to session.userId
+    const userId = (req.user as any)?._id || req.session.userId;
+
+    if (!userId) {
+      console.log(`❌ [AUTH ME] No user found in session or passport`);
       res.status(401).json({ error: "Not authenticated" });
       return;
     }
 
-    const employee = await Employee.findById(req.session.userId)
+    console.log(`✅ [AUTH ME] User ID found: ${userId}`);
+    const employee = await Employee.findById(userId)
       .select("-google_tokens")
       .populate("manager_id", "name email")
       .populate("managed_employees", "name email");
