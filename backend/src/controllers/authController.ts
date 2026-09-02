@@ -142,13 +142,18 @@ export const googleAuthCallback = async (
     }
 
     console.log(`🔓 [AUTH CALLBACK STEP 16] Saving session before redirect`);
+    console.log(`🔓 [AUTH CALLBACK] Session ID: ${req.sessionID}`);
+    console.log(`🔓 [AUTH CALLBACK] Session userId: ${req.session.userId}`);
+
     req.session.save((err) => {
       if (err) {
         console.error(`❌ [AUTH CALLBACK] Session save failed:`, err);
         return res.status(500).json({ error: "Session save failed" });
       }
 
-      console.log(`🔓 [AUTH CALLBACK STEP 17] Redirecting to dashboard`);
+      console.log(`🔓 [AUTH CALLBACK STEP 17] Session saved successfully`);
+      console.log(`🔓 [AUTH CALLBACK] Response headers:`, res.getHeaders());
+
       // Redirect to dashboard
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
       console.log(`🔓 [AUTH CALLBACK STEP 18] Redirect URL: ${frontendUrl}/dashboard`);
@@ -165,7 +170,12 @@ export const getCurrentUser = async (
   res: Response
 ): Promise<void> => {
   try {
+    console.log(`🔍 [AUTH ME] Session ID: ${req.sessionID}`);
+    console.log(`🔍 [AUTH ME] Session userId: ${req.session.userId}`);
+    console.log(`🔍 [AUTH ME] Session data:`, req.session);
+
     if (!req.session.userId) {
+      console.log(`❌ [AUTH ME] No userId in session`);
       res.status(401).json({ error: "Not authenticated" });
       return;
     }
