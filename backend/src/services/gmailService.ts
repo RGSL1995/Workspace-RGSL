@@ -269,6 +269,7 @@ export const getUnreadEmailsForEmployee = async (
       is_read: false,
     })
       .populate("email_connection_id", "email type")
+      .populate("assigned_to", "name email")
       .sort({ received_at: -1 })
       .limit(50);
 
@@ -305,6 +306,7 @@ export const getImportantEmailsForEmployee = async (
       received_at: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // Last 7 days
     })
       .populate("email_connection_id", "email type")
+      .populate("assigned_to", "name email")
       .sort({ received_at: -1 })
       .limit(20);
 

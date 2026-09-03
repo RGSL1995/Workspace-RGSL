@@ -6,6 +6,7 @@ import EmailConnection from "../models/EmailConnection";
 import { askAI, generateEmployeeInsights, generateManagerInsights } from "../services/claudeService";
 import { getUnreadEmailsForEmployee, getImportantEmailsForEmployee, sendEmail } from "../services/gmailService";
 import mongoose from "mongoose";
+import { io, connectedUsers } from "../server";
 
 const router = express.Router();
 
@@ -222,6 +223,7 @@ router.get("/all-emails", async (req: Request, res: Response) => {
       email_connection_id: { $in: connectionIds },
     })
       .populate("email_connection_id", "email type")
+      .populate("assigned_to", "name email")
       .sort({ received_at: -1 })
       .skip(skip)
       .limit(limit);
@@ -267,7 +269,8 @@ router.get("/email/:emailId", async (req: Request, res: Response) => {
     const { emailId } = req.params;
 
     const email = await Email.findById(emailId)
-      .populate("email_connection_id", "email type");
+      .populate("email_connection_id", "email type")
+      .populate("assigned_to", "name email");
 
     if (!email) {
       return res.status(404).json({ error: "Email not found" });
@@ -557,6 +560,7 @@ router.patch("/email/:emailId/assign", async (req: Request, res: Response) => {
       description: `Email from: ${email.from}\n\n${email.body.substring(0, 500)}...`,
       assigner_id: new mongoose.Types.ObjectId(req.session.userId as string),
       assignee_id: new mongoose.Types.ObjectId(assignedToId),
+      email_id: email._id, // Reference back to source email
       department: assigner.departments?.[0] || "Finance", // Use assigner's first department
       status: "open",
       priority: email.classification === "important" ? "high" : "medium",
@@ -574,6 +578,23 @@ router.patch("/email/:emailId/assign", async (req: Request, res: Response) => {
 
     console.log(`📌 [EMAIL] Assigned email ${emailId} to ${assignedEmployee.name}`);
     console.log(`✅ [TASK] Created task from email: ${task._id}`);
+
+    // Emit real-time update via Socket.io to assigned employee
+    const assigneeSocketId = connectedUsers.get(assignedToId);
+    if (assigneeSocketId && io) {
+      console.log(`📡 [SOCKET] Notifying assignee of new task`);
+      io.to(assigneeSocketId).emit("task:created", {
+        _id: task._id,
+        title: task.title,
+        description: task.description,
+        assignee_id: task.assignee_id,
+        status: task.status,
+        priority: task.priority,
+        department: task.department,
+        deadline: task.deadline,
+        created_at: task.created_at,
+      });
+    }
 
     res.json({
       success: true,

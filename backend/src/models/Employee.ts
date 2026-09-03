@@ -3,11 +3,14 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IEmployee extends Document {
   email: string; // Primary company email
   name: string;
-  role: "super_admin" | "department_head" | "department_person";
+  role: "super_admin" | "it_admin" | "department_head" | "department_person";
 
   // Company & Department
   companies: ("RGSL" | "LRSD")[]; // Can belong to multiple companies
   departments: string[]; // Can belong to multiple: ["Finance", "Trading"]
+
+  // Access Control
+  capabilities?: string[]; // Fine-grained permissions for roles
 
   // Hierarchy
   manager_id?: mongoose.Types.ObjectId; // Their dept head (if dept person)
@@ -55,7 +58,7 @@ const EmployeeSchema = new Schema<IEmployee>(
     },
     role: {
       type: String,
-      enum: ["super_admin", "department_head", "department_person"],
+      enum: ["super_admin", "it_admin", "department_head", "department_person"],
       default: "department_person",
       required: true,
     },
@@ -76,6 +79,10 @@ const EmployeeSchema = new Schema<IEmployee>(
         validator: (v: string[]) => v.length > 0,
         message: "Employee must belong to at least one department",
       },
+    },
+    capabilities: {
+      type: [String],
+      default: [],
     },
     manager_id: {
       type: Schema.Types.ObjectId,

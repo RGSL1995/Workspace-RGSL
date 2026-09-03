@@ -91,6 +91,7 @@ export default function Landing() {
     } finally {
       setPinLoading(false);
     }
+    
   };
 
   const handleSubmit = loginMode === 'google' ? handleGoogleSubmit : handlePinSubmit;

@@ -25,6 +25,22 @@ interface EmailItem {
   is_starred?: boolean;
   body?: string;
   confidence_score: number;
+  assigned_to?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  email_connection_id?: {
+    _id: string;
+    email: string;
+    type: 'personal' | 'shared';
+  };
+}
+
+interface MailboxConnection {
+  _id: string;
+  email: string;
+  type: 'personal' | 'shared';
 }
 
 export default function Inbox() {
@@ -39,12 +55,14 @@ export default function Inbox() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [mailboxes, setMailboxes] = useState<MailboxConnection[]>([]);
+  const [selectedMailbox, setSelectedMailbox] = useState<string>('');
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Get current user for Socket.io authentication
+  // Get current user and mailboxes
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndMailboxes = async () => {
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           credentials: 'include',
@@ -53,12 +71,29 @@ export default function Inbox() {
           const userData = await response.json();
           setUser(userData);
         }
+
+        // Fetch mailboxes (personal + shared)
+        const mailboxRes = await fetch(`${API_URL}/api/email-connections`, {
+          credentials: 'include',
+        });
+        if (mailboxRes.ok) {
+          const mailboxData = await mailboxRes.json();
+          const all = [
+            ...(mailboxData.personal || []),
+            ...(mailboxData.shared || []),
+          ];
+          setMailboxes(all);
+          // Set first mailbox as default
+          if (all.length > 0) {
+            setSelectedMailbox(all[0]._id);
+          }
+        }
       } catch (error) {
-        console.error('Failed to fetch user:', error);
+        console.error('Failed to fetch user or mailboxes:', error);
       }
     };
 
-    fetchUser();
+    fetchUserAndMailboxes();
 
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
@@ -185,10 +220,31 @@ export default function Inbox() {
               <Mail size={16} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base font-display font-bold text-white tracking-wider">
                   MAIL INBOX
                 </h2>
+
+                {/* Mailbox Selector */}
+                {mailboxes.length > 0 && (
+                  <select
+                    value={selectedMailbox}
+                    onChange={(e) => {
+                      setSelectedMailbox(e.target.value);
+                      setPage(1);
+                      setEmails([]);
+                    }}
+                    className="text-[11px] font-mono px-2 py-1 rounded bg-slate-900/80 border border-cyan-500/40 text-cyan-300 hover:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  >
+                    {mailboxes.map((mailbox) => (
+                      <option key={mailbox._id} value={mailbox._id}>
+                        {mailbox.type === 'shared' ? '📬 ' : '📧 '}
+                        {mailbox.email}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
                   {filteredEmails.length} OF {totalCount || emails.length}
                 </span>
@@ -349,6 +405,24 @@ export default function Inbox() {
                           >
                             <badge.icon size={10} />
                             <span className="hidden sm:inline">{badge.label}</span>
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Mailbox Source Badge (for shared inboxes) */}
+                      {email.email_connection_id?.type === 'shared' && (
+                        <div className="flex-shrink-0">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-mono font-bold tracking-wider text-purple-300 bg-purple-950/60 border-purple-500/40">
+                            📬 {email.email_connection_id.email.split('@')[0]}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Assignee Badge */}
+                      {email.assigned_to && (
+                        <div className="flex-shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-mono font-bold tracking-wider text-indigo-300 bg-indigo-950/60 border-indigo-500/40">
+                            👤 {email.assigned_to.name.split(' ')[0]}
                           </span>
                         </div>
                       )}

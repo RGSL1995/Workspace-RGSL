@@ -13,6 +13,9 @@ export interface ITask extends Document {
   priority: "low" | "medium" | "high" | "critical";
   status: "open" | "in_progress" | "completed" | "escalated" | "closed";
 
+  // Source Email (if task was created from email assignment)
+  email_id?: mongoose.Types.ObjectId; // Reference to source email
+
   // Deadlines & Escalation
   deadline?: Date;
   escalation_level: 0 | 1 | 2; // 0=person, 1=dept_head, 2=super_admin
@@ -35,6 +38,11 @@ const TaskSchema = new Schema<ITask>(
     description: {
       type: String,
       trim: true,
+    },
+    email_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Email",
+      default: null,
     },
     assigner_id: {
       type: Schema.Types.ObjectId,

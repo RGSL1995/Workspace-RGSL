@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import Task from "../models/Task";
 import Employee from "../models/Employee";
 import { Types } from "mongoose";
+import { backfillTasksWithEmails } from "../utils/taskBackfill";
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router.get("/", async (req: Request, res: Response) => {
       .populate("assigner_id", "name email")
       .populate("assignee_id", "name email")
       .populate("escalated_to_id", "name email")
+      .populate("email_id", "subject from body html_body received_at")
       .sort({ deadline: 1, priority: -1 });
 
     res.json(tasks);
@@ -39,7 +41,8 @@ router.get("/:id", async (req: Request, res: Response) => {
     const task = await Task.findById(id)
       .populate("assigner_id", "name email")
       .populate("assignee_id", "name email")
-      .populate("escalated_to_id", "name email");
+      .populate("escalated_to_id", "name email")
+      .populate("email_id", "subject from body html_body received_at");
 
     if (!task) {
       return res.status(404).json({ error: "Task not found" });
@@ -64,11 +67,32 @@ router.get("/user/:userId", async (req: Request, res: Response) => {
     })
       .populate("assigner_id", "name email")
       .populate("assignee_id", "name email")
+      .populate("email_id", "subject from body html_body received_at")
       .sort({ deadline: 1, priority: -1 });
 
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch user tasks" });
+  }
+});
+
+// GET tasks assigned BY current user (tasks they created/assigned)
+router.get("/assigned-by/:userId", async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    if (!Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    const tasks = await Task.find({ assigner_id: userId })
+      .populate("assigner_id", "name email")
+      .populate("assignee_id", "name email")
+      .populate("email_id", "subject from body html_body received_at")
+      .sort({ deadline: 1, priority: -1 });
+
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch assigned tasks" });
   }
 });
 
@@ -265,6 +289,41 @@ router.delete("/:id", async (req: Request, res: Response) => {
     res.json({ message: "Task deleted", task });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete task" });
+  }
+});
+
+// Admin: Backfill old tasks with email references
+router.post("/admin/backfill-emails", async (req: Request, res: Response) => {
+  try {
+    // Check if user is authenticated and is admin
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = await Employee.findById(req.session.userId);
+    if (!user || user.role !== "super_admin") {
+      return res.status(403).json({ error: "Only super admins can run backfill" });
+    }
+
+    console.log(`📊 [BACKFILL] Starting task-email backfill initiated by ${user.name}`);
+
+    const result = await backfillTasksWithEmails();
+
+    res.json({
+      success: true,
+      message: "Task-email backfill completed",
+      stats: {
+        total: result.total,
+        matched: result.matched,
+        skipped: result.skipped,
+        errors: result.errors.length,
+      },
+      errors: result.errors.length > 0 ? result.errors.slice(0, 10) : [],
+    });
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error(`❌ [BACKFILL] Error:`, error);
+    res.status(500).json({ error: "Backfill failed", details: errMsg });
   }
 });
 

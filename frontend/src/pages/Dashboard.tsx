@@ -17,12 +17,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import Briefing from './Dashboard/Briefing';
 import Inbox from './Dashboard/Inbox';
 import AIAssistant from './Dashboard/AIAssistant';
+import Tasks from './Dashboard/Tasks';
+import AssignedTasks from './Dashboard/AssignedTasks';
 import AdminTab from '../components/AdminPanel/AdminTab';
+import ITOperationsPanel from './Dashboard/ITOperationsPanel';
 import PinSetupModal from '../components/PinSetupModal';
 import { CyberBackground } from '../components/ui/CyberBackground';
 import { BorderBeam } from '../components/ui/BorderBeam';
 
-type TabType = 'briefing' | 'inbox' | 'assistant' | 'tasks' | 'admin';
+type TabType = 'briefing' | 'inbox' | 'assistant' | 'tasks' | 'assigned' | 'admin' | 'operations';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -34,9 +37,13 @@ export default function Dashboard() {
     { id: 'briefing', label: 'Daily Briefing', icon: Sparkles, color: 'text-cyan-400' },
     { id: 'inbox', label: 'Mail Inbox', icon: Mail, color: 'text-indigo-400' },
     { id: 'assistant', label: 'AI Assistant', icon: MessageSquare, color: 'text-purple-400' },
-    { id: 'tasks', label: 'Operational Tasks', icon: CheckCircle, color: 'text-emerald-400' },
+    { id: 'tasks', label: 'My Tasks', icon: CheckCircle, color: 'text-emerald-400' },
+    { id: 'assigned', label: 'Assigned Tasks', icon: Activity, color: 'text-amber-400' },
     ...(user?.role === 'super_admin'
       ? [{ id: 'admin', label: 'Admin Panel', icon: Settings, color: 'text-rose-400' }]
+      : []),
+    ...(user?.role === 'it_admin'
+      ? [{ id: 'operations', label: 'IT Operations', icon: Cpu, color: 'text-yellow-400' }]
       : []),
   ];
 
@@ -261,17 +268,20 @@ export default function Dashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -15 }}
                   transition={{ duration: 0.3 }}
-                  className="rounded-2xl border border-cyan-500/20 bg-slate-900/60 backdrop-blur-xl p-10 text-center"
                 >
-                  <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mx-auto mb-4">
-                    <CheckCircle size={32} />
-                  </div>
-                  <h3 className="font-display font-semibold text-xl text-white mb-2">
-                    Neural Task Matrix
-                  </h3>
-                  <p className="text-slate-400 font-mono text-sm max-w-md mx-auto">
-                    Automated tasks extracted by Claude AI from inbound communications will be synchronized here.
-                  </p>
+                  <Tasks />
+                </motion.div>
+              )}
+
+              {activeTab === 'assigned' && (
+                <motion.div
+                  key="assigned"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AssignedTasks />
                 </motion.div>
               )}
 
@@ -284,6 +294,18 @@ export default function Dashboard() {
                   transition={{ duration: 0.3 }}
                 >
                   <AdminTab />
+                </motion.div>
+              )}
+
+              {activeTab === 'operations' && user?.role === 'it_admin' && (
+                <motion.div
+                  key="operations"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ITOperationsPanel />
                 </motion.div>
               )}
             </AnimatePresence>

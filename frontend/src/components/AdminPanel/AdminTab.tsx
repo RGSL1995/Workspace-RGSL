@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Settings, BarChart3, Users } from 'lucide-react';
+import { Settings, BarChart3, Users, Mail } from 'lucide-react';
 import DepartmentManagement from './DepartmentManagement';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import SharedMailboxManagement from './SharedMailboxManagement';
 
-type AdminView = 'departments' | 'analytics';
+type AdminView = 'departments' | 'analytics' | 'mailboxes';
 
 export default function AdminTab() {
   const [activeView, setActiveView] = useState<AdminView>('analytics');
@@ -20,6 +21,12 @@ export default function AdminTab() {
       label: 'Departments',
       icon: Users,
       description: 'Manage departments and assignments',
+    },
+    {
+      id: 'mailboxes',
+      label: 'Shared Mailboxes',
+      icon: Mail,
+      description: 'Manage shared email inboxes and access',
     },
   ];
 
@@ -69,6 +76,7 @@ export default function AdminTab() {
       <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/60 backdrop-blur-xl p-6">
         {activeView === 'analytics' && <AnalyticsDashboard />}
         {activeView === 'departments' && <DepartmentManagement />}
+        {activeView === 'mailboxes' && <SharedMailboxManagement />}
       </div>
     </div>
   );

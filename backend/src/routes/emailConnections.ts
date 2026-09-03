@@ -247,4 +247,136 @@ router.patch("/:id/sync", async (req: Request, res: Response) => {
   }
 });
 
+// GET all shared mailboxes (Admin only)
+router.get("/shared/list/all", async (req: Request, res: Response) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = await Employee.findById(req.session.userId);
+    if (!user || user.role !== "super_admin") {
+      return res.status(403).json({ error: "Only admins can view all shared mailboxes" });
+    }
+
+    const sharedMailboxes = await EmailConnection.find({ type: "shared" })
+      .populate("authorized_employees", "name email departments")
+      .sort({ created_at: -1 });
+
+    res.json(sharedMailboxes);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch shared mailboxes" });
+  }
+});
+
+// ADD employee to shared mailbox (Admin only)
+router.patch("/:connectionId/add-employee/:employeeId", async (req: Request, res: Response) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = await Employee.findById(req.session.userId);
+    if (!user || user.role !== "super_admin") {
+      return res.status(403).json({ error: "Only admins can manage shared mailbox access" });
+    }
+
+    const { connectionId, employeeId } = req.params;
+
+    if (!Types.ObjectId.isValid(connectionId) || !Types.ObjectId.isValid(employeeId)) {
+      return res.status(400).json({ error: "Invalid connection or employee ID" });
+    }
+
+    // Verify connection is shared
+    const connection = await EmailConnection.findById(connectionId);
+    if (!connection) {
+      return res.status(404).json({ error: "Email connection not found" });
+    }
+
+    if (connection.type !== "shared") {
+      return res.status(400).json({ error: "Can only add employees to shared mailboxes" });
+    }
+
+    // Verify employee exists
+    const employee = await Employee.findById(employeeId);
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    // Check if already added
+    if (connection.authorized_employees.includes(employeeId as any)) {
+      return res.status(409).json({ error: "Employee already has access to this mailbox" });
+    }
+
+    // Add employee
+    connection.authorized_employees.push(employeeId as any);
+    await connection.save();
+
+    console.log(`✅ [MAILBOX] Added ${employee.name} to shared mailbox ${connection.email}`);
+
+    res.json({
+      message: "Employee added to shared mailbox",
+      connection: await connection.populate("authorized_employees", "name email"),
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add employee to mailbox" });
+  }
+});
+
+// REMOVE employee from shared mailbox (Admin only)
+router.patch("/:connectionId/remove-employee/:employeeId", async (req: Request, res: Response) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const user = await Employee.findById(req.session.userId);
+    if (!user || user.role !== "super_admin") {
+      return res.status(403).json({ error: "Only admins can manage shared mailbox access" });
+    }
+
+    const { connectionId, employeeId } = req.params;
+
+    if (!Types.ObjectId.isValid(connectionId) || !Types.ObjectId.isValid(employeeId)) {
+      return res.status(400).json({ error: "Invalid connection or employee ID" });
+    }
+
+    // Verify connection is shared
+    const connection = await EmailConnection.findById(connectionId);
+    if (!connection) {
+      return res.status(404).json({ error: "Email connection not found" });
+    }
+
+    if (connection.type !== "shared") {
+      return res.status(400).json({ error: "Can only remove employees from shared mailboxes" });
+    }
+
+    // Verify employee exists
+    const employee = await Employee.findById(employeeId);
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    // Check if employee has access
+    if (!connection.authorized_employees.includes(employeeId as any)) {
+      return res.status(404).json({ error: "Employee does not have access to this mailbox" });
+    }
+
+    // Remove employee
+    connection.authorized_employees = connection.authorized_employees.filter(
+      (id) => id.toString() !== employeeId
+    );
+    await connection.save();
+
+    console.log(`✅ [MAILBOX] Removed ${employee.name} from shared mailbox ${connection.email}`);
+
+    res.json({
+      message: "Employee removed from shared mailbox",
+      connection: await connection.populate("authorized_employees", "name email"),
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to remove employee from mailbox" });
+  }
+});
+
 export default router;

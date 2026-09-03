@@ -4,8 +4,9 @@ interface Employee {
   _id: string;
   name: string;
   email: string;
-  role: 'super_admin' | 'department_head' | 'department_person';
+  role: 'super_admin' | 'it_admin' | 'department_head' | 'department_person';
   departments: string[];
+  capabilities?: string[];
   pin_hash?: string | null;
 }
 
