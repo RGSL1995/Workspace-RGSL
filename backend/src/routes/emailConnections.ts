@@ -270,16 +270,11 @@ router.get("/shared/list/all", async (req: Request, res: Response) => {
   }
 });
 
-// ADD employee to shared mailbox (Admin only)
+// ADD employee to shared mailbox (Admin, Department Head, or Mailbox Owner)
 router.patch("/:connectionId/add-employee/:employeeId", async (req: Request, res: Response) => {
   try {
-    if (!req.session.userId) {
+    if (!req.session?.userId) {
       return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    const user = await Employee.findById(req.session.userId);
-    if (!user || user.role !== "super_admin") {
-      return res.status(403).json({ error: "Only admins can manage shared mailbox access" });
     }
 
     const { connectionId, employeeId } = req.params;
@@ -288,7 +283,7 @@ router.patch("/:connectionId/add-employee/:employeeId", async (req: Request, res
       return res.status(400).json({ error: "Invalid connection or employee ID" });
     }
 
-    // Verify connection is shared
+    // Verify connection exists and is shared
     const connection = await EmailConnection.findById(connectionId);
     if (!connection) {
       return res.status(404).json({ error: "Email connection not found" });
@@ -296,6 +291,20 @@ router.patch("/:connectionId/add-employee/:employeeId", async (req: Request, res
 
     if (connection.type !== "shared") {
       return res.status(400).json({ error: "Can only add employees to shared mailboxes" });
+    }
+
+    const user = await Employee.findById(req.session.userId);
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const isOwner =
+      connection.owner_id?.toString() === req.session.userId ||
+      connection.created_by?.toString() === req.session.userId;
+    const isAdmin = ["super_admin", "it_admin", "department_head"].includes(user.role);
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "Only admins, department heads, or mailbox owners can manage access" });
     }
 
     // Verify employee exists
@@ -324,16 +333,11 @@ router.patch("/:connectionId/add-employee/:employeeId", async (req: Request, res
   }
 });
 
-// REMOVE employee from shared mailbox (Admin only)
+// REMOVE employee from shared mailbox (Admin, Department Head, or Mailbox Owner)
 router.patch("/:connectionId/remove-employee/:employeeId", async (req: Request, res: Response) => {
   try {
-    if (!req.session.userId) {
+    if (!req.session?.userId) {
       return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    const user = await Employee.findById(req.session.userId);
-    if (!user || user.role !== "super_admin") {
-      return res.status(403).json({ error: "Only admins can manage shared mailbox access" });
     }
 
     const { connectionId, employeeId } = req.params;
@@ -342,7 +346,7 @@ router.patch("/:connectionId/remove-employee/:employeeId", async (req: Request, 
       return res.status(400).json({ error: "Invalid connection or employee ID" });
     }
 
-    // Verify connection is shared
+    // Verify connection exists and is shared
     const connection = await EmailConnection.findById(connectionId);
     if (!connection) {
       return res.status(404).json({ error: "Email connection not found" });
@@ -350,6 +354,20 @@ router.patch("/:connectionId/remove-employee/:employeeId", async (req: Request, 
 
     if (connection.type !== "shared") {
       return res.status(400).json({ error: "Can only remove employees from shared mailboxes" });
+    }
+
+    const user = await Employee.findById(req.session.userId);
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const isOwner =
+      connection.owner_id?.toString() === req.session.userId ||
+      connection.created_by?.toString() === req.session.userId;
+    const isAdmin = ["super_admin", "it_admin", "department_head"].includes(user.role);
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ error: "Only admins, department heads, or mailbox owners can manage access" });
     }
 
     // Verify employee exists
