@@ -18,7 +18,10 @@ import emailConnectionRoutes from "./routes/emailConnections";
 import aiRoutes from "./routes/ai";
 import departmentRoutes from "./routes/departments";
 import analyticsRoutes from "./routes/analytics";
+import ipoRoutes from "./routes/ipo";
 import { startEmailScheduler } from "./jobs/emailScheduler";
+import { startIPOScheduler } from "./services/ipoScheduler";
+import { setSocketServer } from "./services/ipoNotifier";
 
 const app = express();
 
@@ -111,6 +114,7 @@ app.use("/api/email-connections", emailConnectionRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/ipo", ipoRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -125,6 +129,9 @@ const io = new SocketIOServer(httpServer, {
   },
 });
 
+// Pass Socket.io to IPO notifier
+setSocketServer(io);
+
 // Store connected users: userId -> socketId
 const connectedUsers = new Map<string, string>();
 
@@ -136,6 +143,12 @@ io.on("connection", (socket) => {
   socket.on("auth", (userId: string) => {
     connectedUsers.set(userId, socket.id);
     console.log(`👤 [SOCKET] User authenticated: ${userId}`);
+  });
+
+  // Listen for IPO notifications
+  socket.on("subscribe:ipo", () => {
+    socket.join("ipo-notifications");
+    console.log(`📢 [SOCKET] User subscribed to IPO notifications: ${socket.id}`);
   });
 
   socket.on("disconnect", () => {
@@ -159,10 +172,14 @@ const startServer = async (): Promise<void> => {
   // Start email scheduler for real-time updates
   startEmailScheduler();
 
+  // Start IPO scraper scheduler (every 6 hours: "0 */6 * * *")
+  startIPOScheduler("0 */6 * * *");
+
   httpServer.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
     console.log(`Google OAuth callback: http://localhost:${PORT}/api/auth/google/callback`);
     console.log(`🔄 Socket.io server is initialized`);
+    console.log(`📬 IPO notification system is active`);
   });
 };
 

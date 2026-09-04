@@ -1,161 +1,162 @@
 import { useState } from 'react';
-import { Settings, Lock, BarChart3, Zap } from 'lucide-react';
+import { Settings, Lock, BarChart3, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
+import SharedMailboxManagement from '../../components/AdminPanel/SharedMailboxManagement';
+import ConnectSharedEmail from '../../components/AdminPanel/ConnectSharedEmail';
+import { GlowCard } from '../../components/ui/GlowCard';
 
 export default function ITOperationsPanel() {
-  const [activeTab, setActiveTab] = useState<'business' | 'technical'>('business');
+  const [activeTab, setActiveTab] = useState<'business' | 'technical' | 'mailboxes'>('business');
   const [systemStatus] = useState({
-    database: 'healthy',
-    api: 'operational',
-    emails: 'syncing',
-    lastBackup: '2 hours ago',
+    database: 'Healthy',
+    api: 'Operational',
+    emails: 'Active Sync',
+    lastBackup: '2 hrs ago',
   });
 
   const tabs = [
-    { id: 'business', label: '📊 Business Operations', icon: BarChart3 },
-    { id: 'technical', label: '🔧 Technical Operations', icon: Settings },
+    { id: 'business', label: 'Business Ops', icon: BarChart3 },
+    { id: 'technical', label: 'Infrastructure', icon: Settings },
+    { id: 'mailboxes', label: 'Shared Mailboxes', icon: Mail },
   ];
 
   const businessSections = [
     {
       title: 'Company Analytics',
       icon: '📊',
-      description: 'View and manage company-wide metrics',
-      status: 'Available',
+      description: 'View and manage company-wide metrics and KPIs',
+      status: 'Ready',
     },
     {
-      title: 'Employee Management',
+      title: 'Employee Directory',
       icon: '👥',
-      description: 'Manage employees and assignments',
-      status: 'Available',
+      description: 'Manage staff roles, sectors, and access permissions',
+      status: 'Active',
     },
     {
-      title: 'Department Management',
+      title: 'Department Sectors',
       icon: '🏢',
-      description: 'Manage departments and organization',
-      status: 'Available',
+      description: 'Manage department organizational hierarchies',
+      status: 'Synced',
     },
     {
-      title: 'Mailbox Management',
+      title: 'Mailbox Access',
       icon: '📬',
-      description: 'Control shared mailbox access',
-      status: 'Available',
+      description: 'Control shared mailbox delegations and credentials',
+      status: 'Active',
     },
     {
-      title: 'Workload Monitoring',
+      title: 'Workload Telemetry',
       icon: '📈',
-      description: 'Monitor employee workload and distribution',
-      status: 'Available',
+      description: 'Monitor employee throughput and queue distribution',
+      status: 'Live',
     },
   ];
 
   const technicalSections = [
     {
-      title: 'System Settings',
+      title: 'System Configuration',
       icon: '⚙️',
-      description: 'Configure system parameters and settings',
-      capabilities: ['API Configuration', 'Email Sync Settings', 'Notification Config'],
+      description: 'Configure core platform parameters and environment keys',
+      capabilities: ['API Configuration', 'Email Sync Intervals', 'Notification Webhooks'],
     },
     {
-      title: 'Security Management',
+      title: 'Security & Access',
       icon: '🔐',
-      description: 'Manage security and access controls',
-      capabilities: ['User Permissions', 'Access Logs', 'Security Alerts'],
+      description: 'Manage zero-trust policies and role-based permissions',
+      capabilities: ['RBAC Permissions', 'Audit Logs', 'Session Invalidation'],
     },
     {
-      title: 'Database Management',
+      title: 'Database Cluster',
       icon: '🗄️',
-      description: 'Monitor and manage database operations',
-      capabilities: ['Database Status', 'Backup Management', 'Data Maintenance'],
+      description: 'Monitor MongoDB replication, query times, and indexes',
+      capabilities: ['Database Health', 'Index Performance', 'TTL Policies'],
     },
     {
-      title: 'Monitoring & Logs',
+      title: 'Telemetry & Logs',
       icon: '📋',
-      description: 'View system logs and performance metrics',
-      capabilities: ['System Logs', 'Error Tracking', 'Performance Metrics'],
-    },
-    {
-      title: 'Integrations',
-      icon: '🔄',
-      description: 'Manage external service integrations',
-      capabilities: ['Gmail API', 'OAuth Status', 'Webhooks'],
-    },
-    {
-      title: 'Backup Management',
-      icon: '💾',
-      description: 'Manage system backups and recovery',
-      capabilities: ['Backup Status', 'Restore Options', 'Backup History'],
+      description: 'Inspect live server logs and error stack traces',
+      capabilities: ['Realtime Socket Logs', 'Error Reporting', 'Latency Tracking'],
     },
   ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-r from-slate-900/80 via-slate-950/90 to-black/90 p-6 backdrop-blur-xl">
-        <div className="flex items-center gap-3 mb-2">
-          <Zap className="w-6 h-6 text-yellow-400" />
-          <h2 className="text-2xl font-display font-bold text-white tracking-wider">
-            IT OPERATIONS DASHBOARD
-          </h2>
-        </div>
-        <p className="text-slate-400 font-mono text-xs">
-          Complete control over business operations and technical systems
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          IT Operations Control
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          Infrastructure health, shared mailboxes, and enterprise system management
         </p>
       </div>
 
-      {/* System Status */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <motion.div
-          whileHover={{ y: -2 }}
-          className="p-3 rounded-lg border border-cyan-500/30 bg-cyan-950/30 backdrop-blur-sm"
-        >
-          <div className="text-[10px] font-mono text-cyan-400 mb-1">DATABASE</div>
-          <div className="text-sm font-semibold text-cyan-300">{systemStatus.database}</div>
-        </motion.div>
+      {/* System Status Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <GlowCard className="p-3.5">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Database
+          </div>
+          <div className="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            {systemStatus.database}
+          </div>
+        </GlowCard>
 
-        <motion.div
-          whileHover={{ y: -2 }}
-          className="p-3 rounded-lg border border-blue-500/30 bg-blue-950/30 backdrop-blur-sm"
-        >
-          <div className="text-[10px] font-mono text-blue-400 mb-1">API SERVER</div>
-          <div className="text-sm font-semibold text-blue-300">{systemStatus.api}</div>
-        </motion.div>
+        <GlowCard className="p-3.5">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            API Gateway
+          </div>
+          <div className="text-base sm:text-lg font-bold text-sky-600 dark:text-sky-400 mt-1 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-sky-500" />
+            {systemStatus.api}
+          </div>
+        </GlowCard>
 
-        <motion.div
-          whileHover={{ y: -2 }}
-          className="p-3 rounded-lg border border-purple-500/30 bg-purple-950/30 backdrop-blur-sm"
-        >
-          <div className="text-[10px] font-mono text-purple-400 mb-1">EMAIL SYNC</div>
-          <div className="text-sm font-semibold text-purple-300">{systemStatus.emails}</div>
-        </motion.div>
+        <GlowCard className="p-3.5">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Mailbox Sync
+          </div>
+          <div className="text-base sm:text-lg font-bold text-brand-600 dark:text-brand-400 mt-1 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-brand-500" />
+            {systemStatus.emails}
+          </div>
+        </GlowCard>
 
-        <motion.div
-          whileHover={{ y: -2 }}
-          className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-950/30 backdrop-blur-sm"
-        >
-          <div className="text-[10px] font-mono text-emerald-400 mb-1">LAST BACKUP</div>
-          <div className="text-sm font-semibold text-emerald-300">{systemStatus.lastBackup}</div>
-        </motion.div>
+        <GlowCard className="p-3.5">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            Last Snapshot
+          </div>
+          <div className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 mt-1">
+            {systemStatus.lastBackup}
+          </div>
+        </GlowCard>
       </div>
 
       {/* Tab Switcher */}
-      <div className="flex gap-3 border-b border-white/10">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-3 font-mono text-sm transition-all border-b-2 ${
-              activeTab === tab.id
-                ? 'border-cyan-400 text-cyan-300 font-semibold'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex p-1 rounded-xl theme-card-subtle w-fit gap-1">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                isActive
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-700 dark:text-white hover:text-indigo-600 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'
+              }`}
+            >
+              <Icon size={14} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Content */}
+      {/* Business Operations Grid */}
       {activeTab === 'business' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {businessSections.map((section, idx) => (
@@ -163,17 +164,17 @@ export default function ITOperationsPanel() {
               key={idx}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="p-4 rounded-lg border border-cyan-500/20 bg-slate-900/60 hover:border-cyan-500/50 hover:bg-slate-900/80 transition-all cursor-pointer group"
+              transition={{ delay: idx * 0.04 }}
+              className="p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl shadow-xs hover:shadow-md transition-all space-y-2.5"
             >
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between">
                 <span className="text-2xl">{section.icon}</span>
-                <span className="px-2 py-1 rounded text-[9px] font-mono bg-emerald-500/30 text-emerald-300 border border-emerald-500/40">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                   {section.status}
                 </span>
               </div>
-              <h3 className="font-semibold text-white mb-1">{section.title}</h3>
-              <p className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white">{section.title}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 {section.description}
               </p>
             </motion.div>
@@ -181,6 +182,7 @@ export default function ITOperationsPanel() {
         </div>
       )}
 
+      {/* Technical Operations Grid */}
       {activeTab === 'technical' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {technicalSections.map((section, idx) => (
@@ -188,22 +190,26 @@ export default function ITOperationsPanel() {
               key={idx}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="p-4 rounded-lg border border-purple-500/20 bg-slate-900/60 hover:border-purple-500/50 hover:bg-slate-900/80 transition-all"
+              transition={{ delay: idx * 0.04 }}
+              className="p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl shadow-xs hover:shadow-md transition-all space-y-3"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <span className="text-2xl block mb-1">{section.icon}</span>
-                  <h3 className="font-semibold text-white">{section.title}</h3>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl">{section.icon}</span>
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    {section.title}
+                  </h3>
                 </div>
-                <Lock size={16} className="text-purple-400 mt-1" />
+                <Lock size={15} className="text-slate-400" />
               </div>
-              <p className="text-xs text-slate-400 mb-3">{section.description}</p>
-              <div className="space-y-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                {section.description}
+              </p>
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
                 {section.capabilities.map((cap, cidx) => (
-                  <div key={cidx} className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                    <span className="w-1 h-1 rounded-full bg-purple-400"></span>
-                    {cap}
+                  <div key={cidx} className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+                    <span>{cap}</span>
                   </div>
                 ))}
               </div>
@@ -212,16 +218,34 @@ export default function ITOperationsPanel() {
         </div>
       )}
 
-      {/* Notes */}
-      <div className="p-4 rounded-lg border border-white/10 bg-slate-900/40 backdrop-blur-sm">
-        <div className="text-sm text-slate-400 space-y-2">
-          <p className="font-semibold text-cyan-300">ℹ️ Full System Access</p>
-          <p>
-            As IT Admin, you have complete access to both business operations and technical systems.
-            You can manage all aspects of the platform from employee assignments to system configuration.
-          </p>
+      {/* Shared Mailboxes Management Tab */}
+      {activeTab === 'mailboxes' && (
+        <div className="space-y-6">
+          <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl shadow-xs">
+            <div className="mb-5">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                📬 Connect New Shared Mailbox
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Authorize a new shared mailbox with Google OAuth credentials
+              </p>
+            </div>
+            <ConnectSharedEmail />
+          </div>
+
+          <div className="p-6 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl shadow-xs">
+            <div className="mb-5">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
+                👥 Manage Mailbox Assignments
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Assign and revoke team member access to shared mailboxes
+              </p>
+            </div>
+            <SharedMailboxManagement />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

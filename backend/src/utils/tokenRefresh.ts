@@ -15,22 +15,25 @@ export const refreshGoogleToken = async (connectionId: string): Promise<boolean>
       return false;
     }
 
-    const { refresh_token } = connection.google_tokens;
-
-    if (!refresh_token) {
-      console.log(`❌ [TOKEN REFRESH] No refresh token for connection: ${connectionId}`);
-      return false;
-    }
-
-    // Check if token is expired or about to expire (within 5 minutes)
+    // Check if access token is currently valid (expires in > 2 minutes)
     const expiresAt = connection.google_tokens.expires_at || 0;
     const now = Date.now();
     const timeUntilExpiry = expiresAt - now;
 
-    // If token expires in more than 5 minutes, no need to refresh yet
-    if (timeUntilExpiry > 5 * 60 * 1000) {
-      console.log(`✅ [TOKEN REFRESH] Token still valid for ${Math.round(timeUntilExpiry / 1000)}s`);
+    if (connection.google_tokens.access_token && timeUntilExpiry > 2 * 60 * 1000) {
+      console.log(`✅ [TOKEN REFRESH] Access token is valid for ${Math.round(timeUntilExpiry / 1000)}s`);
       return true;
+    }
+
+    const { refresh_token } = connection.google_tokens;
+
+    if (!refresh_token) {
+      console.log(`⚠️ [TOKEN REFRESH] No refresh token, but checking if access token exists`);
+      if (connection.google_tokens.access_token && timeUntilExpiry > 0) {
+        return true;
+      }
+      console.log(`❌ [TOKEN REFRESH] No refresh token and access token expired for: ${connectionId}`);
+      return false;
     }
 
     console.log(`🔄 [TOKEN REFRESH] Refreshing token for ${connection.email}`);

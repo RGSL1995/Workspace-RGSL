@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import EmailConnection from "../models/EmailConnection";
 import Employee from "../models/Employee";
 import { Types } from "mongoose";
+import { syncEmailsFromConnection } from "../services/gmailService";
 
 const router = express.Router();
 
@@ -109,7 +110,7 @@ router.post("/shared", async (req: Request, res: Response) => {
 
     // Verify user is admin
     const user = await Employee.findById(req.session.userId);
-    if (!user || user.role !== "super_admin") {
+    if (!user || (user.role !== "super_admin" && user.role !== "it_admin")) {
       return res.status(403).json({ error: "Only admins can create shared mailboxes" });
     }
 
@@ -255,7 +256,7 @@ router.get("/shared/list/all", async (req: Request, res: Response) => {
     }
 
     const user = await Employee.findById(req.session.userId);
-    if (!user || user.role !== "super_admin") {
+    if (!user || (user.role !== "super_admin" && user.role !== "it_admin")) {
       return res.status(403).json({ error: "Only admins can view all shared mailboxes" });
     }
 
@@ -376,6 +377,75 @@ router.patch("/:connectionId/remove-employee/:employeeId", async (req: Request, 
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to remove employee from mailbox" });
+  }
+});
+
+// SYNC all connections for logged-in user
+router.post("/sync", async (req: Request, res: Response) => {
+  try {
+    if (!req.session?.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const connections = await EmailConnection.find({
+      $or: [
+        { owner_id: req.session.userId },
+        { authorized_employees: req.session.userId },
+      ],
+      "google_tokens.access_token": { $exists: true },
+    });
+
+    if (connections.length === 0) {
+      return res.json({ message: "No connected mailboxes found to sync", synced: 0 });
+    }
+
+    let synced = 0;
+    for (const conn of connections) {
+      try {
+        await syncEmailsFromConnection(conn._id.toString());
+        synced++;
+      } catch (err) {
+        console.error(`Sync error for ${conn.email}:`, err);
+      }
+    }
+
+    res.json({ message: `Successfully synced ${synced} mailbox(es)`, synced });
+  } catch (error) {
+    console.error("Sync error:", error);
+    res.status(500).json({ error: "Failed to sync mailboxes" });
+  }
+});
+
+// SYNC single mailbox connection
+router.post("/:id/sync", async (req: Request, res: Response) => {
+  try {
+    if (!req.session?.userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid connection ID" });
+    }
+
+    const connection = await EmailConnection.findOne({
+      _id: id,
+      $or: [
+        { owner_id: req.session.userId },
+        { authorized_employees: req.session.userId },
+      ],
+    });
+
+    if (!connection) {
+      return res.status(404).json({ error: "Mailbox connection not found or unauthorized" });
+    }
+
+    await syncEmailsFromConnection(connection._id.toString());
+
+    res.json({ message: `Successfully synced ${connection.email}`, success: true });
+  } catch (error) {
+    console.error("Single mailbox sync error:", error);
+    res.status(500).json({ error: "Failed to sync mailbox" });
   }
 });
 

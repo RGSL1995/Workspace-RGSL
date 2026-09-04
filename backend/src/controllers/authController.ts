@@ -80,7 +80,7 @@ export const googleAuthCallback = async (
               expires_at: Date.now() + 3600 * 1000,
             },
             created_by: employee._id,
-            last_synced: new Date(),
+            last_synced: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
             sync_status: "idle",
           });
 
@@ -362,12 +362,20 @@ export const verifyPinOnly = async (req: Request, res: Response): Promise<void> 
     console.log(`🔐 [PIN-ONLY LOGIN STEP 2] Searching for matching PIN`);
 
     // Find employee by PIN hash - this requires iterating and comparing
-    const employees = await Employee.find({ pin_hash: { $exists: true } });
+    const employees = await Employee.find({ pin_hash: { $exists: true, $ne: null } });
     console.log(`🔐 [PIN-ONLY LOGIN STEP 3] Found ${employees.length} employees with PIN set`);
 
     let employee = null;
     for (const emp of employees) {
-      const isMatch = await verifyPin(pin, emp.pin_hash);
+      // Ensure pin_hash is a string
+      const pinHashString = typeof emp.pin_hash === 'string' ? emp.pin_hash : String(emp.pin_hash);
+
+      if (!pinHashString || pinHashString === 'null') {
+        console.log(`⚠️  [PIN-ONLY LOGIN STEP 3.5] Skipping employee ${emp.email} with invalid pin_hash`);
+        continue;
+      }
+
+      const isMatch = await verifyPin(pin, pinHashString);
       if (isMatch) {
         console.log(`✅ [PIN-ONLY LOGIN STEP 4] PIN matched for ${emp.email}`);
         employee = emp;
@@ -437,5 +445,95 @@ export const verifyPinOnly = async (req: Request, res: Response): Promise<void> 
   } catch (error) {
     console.error("❌ [PIN-ONLY LOGIN] Exception:", error);
     res.status(500).json({ error: "Login failed" });
+  }
+};
+
+/**
+ * Google OAuth callback for adding shared mailboxes (Custom handler, no Passport)
+ * Does NOT create a new user or session - just adds EmailConnection
+ */
+export const googleAuthCallbackSharedMailbox = async (
+  req: Request,
+  res: Response,
+  oauthData?: { userId: string; sharedEmail: string; accessToken: string; refreshToken: string | null }
+): Promise<void> => {
+  console.log("\n================================");
+  console.log("📬 SHARED MAILBOX OAUTH CALLBACK");
+  console.log("================================");
+
+  try {
+    if (!oauthData) {
+      console.error("❌ [SHARED MAILBOX] Missing OAuth data");
+      return res.status(400).json({ error: "Missing OAuth data" });
+    }
+
+    const { userId, sharedEmail, accessToken, refreshToken } = oauthData;
+
+    console.log(`📬 [SHARED MAILBOX] Original User ID: ${userId}`);
+    console.log(`📬 [SHARED MAILBOX] Shared Email: ${sharedEmail}`);
+
+    // Verify the user is still authenticated and is admin
+    const currentUser = await Employee.findById(userId);
+    if (!currentUser || (currentUser.role !== "super_admin" && currentUser.role !== "it_admin")) {
+      console.error(`❌ [SHARED MAILBOX] User ${currentUser?.email || userId} not admin`);
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      return res.redirect(`${frontendUrl}/dashboard?error=Only admins can add shared mailboxes`);
+    }
+
+    console.log(`📬 [SHARED MAILBOX] Admin verified: ${currentUser.email}`);
+
+    // Check if this mailbox already exists
+    const existing = await EmailConnection.findOne({ email: sharedEmail, type: "shared" });
+    if (existing) {
+      console.log(`⚠️  [SHARED MAILBOX] Mailbox already exists: ${sharedEmail}`);
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      return res.redirect(`${frontendUrl}/dashboard?tab=operations&error=Shared mailbox already connected`);
+    }
+
+    console.log(`📬 [SHARED MAILBOX] Creating EmailConnection...`);
+
+    // Create EmailConnection for shared mailbox
+    const emailConnection = new EmailConnection({
+      email: sharedEmail,
+      type: "shared",
+      company: "RGSL", // Default, can be updated later
+      owner_id: currentUser._id,
+      authorized_employees: [currentUser._id],
+      google_id: `temp_${sharedEmail.split("@")[0]}_${Date.now()}`, // Temporary ID
+      google_tokens: {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_at: Date.now() + 3600 * 1000,
+      },
+      created_by: currentUser._id,
+      last_synced: new Date(),
+      sync_status: "idle",
+    });
+
+    await emailConnection.save();
+
+    console.log(`✅ [SHARED MAILBOX] Created: ${sharedEmail}`);
+    console.log(`✅ [SHARED MAILBOX] ID: ${emailConnection._id}`);
+
+    // Start email sync in background (don't wait for it)
+    syncEmailsFromConnection(emailConnection._id.toString())
+      .then(() => console.log(`✅ [SHARED MAILBOX] Initial sync completed`))
+      .catch((error) => console.error(`❌ [SHARED MAILBOX] Sync error:`, error));
+
+    // Redirect back to current user's dashboard (stay logged in as current user)
+    console.log(`📬 [SHARED MAILBOX] Redirecting back to IT Operations panel`);
+    console.log(`📬 [SHARED MAILBOX] User staying logged in as: ${currentUser.email}`);
+
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const successMessage = `Shared mailbox ${sharedEmail} connected successfully!`;
+    const redirectUrl = `${frontendUrl}/dashboard?tab=operations&mailbox_added=${emailConnection._id}&success=${encodeURIComponent(successMessage)}`;
+
+    console.log(`📬 [SHARED MAILBOX] Redirecting to: ${frontendUrl}/dashboard?tab=operations`);
+    res.redirect(redirectUrl);
+
+  } catch (error) {
+    console.error("❌ [SHARED MAILBOX] Error:", error);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    res.redirect(`${frontendUrl}/dashboard?error=Failed to connect shared mailbox`);
   }
 };

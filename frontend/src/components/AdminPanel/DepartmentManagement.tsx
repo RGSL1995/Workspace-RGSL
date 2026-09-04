@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, Users, RefreshCw } from 'lucide-react';
+import { Trash2, Users, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface Department {
@@ -52,7 +52,7 @@ export default function DepartmentManagement() {
   };
 
   const handleDeleteDepartment = async (deptId: string) => {
-    if (!window.confirm('Are you sure? This will remove all assignments.')) return;
+    if (!window.confirm('Are you sure? This will remove all department assignments.')) return;
 
     try {
       const res = await fetch(`${API_URL}/api/departments/${deptId}`, {
@@ -72,7 +72,7 @@ export default function DepartmentManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-6 h-6 text-cyan-400 animate-spin" />
+        <RefreshCw className="w-6 h-6 text-brand-500 animate-spin" />
       </div>
     );
   }
@@ -82,17 +82,13 @@ export default function DepartmentManagement() {
       {/* Department List */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-mono text-sm font-semibold text-white tracking-wider">
-            DEPARTMENTS ({departments.length})
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            Departments ({departments.length})
           </h3>
-          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/30 transition-all text-xs font-mono">
-            <Plus className="w-3.5 h-3.5" />
-            NEW
-          </button>
         </div>
 
         {departments.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 font-mono text-xs">
+          <div className="text-center py-8 text-slate-400 text-xs">
             No departments configured yet
           </div>
         ) : (
@@ -101,17 +97,17 @@ export default function DepartmentManagement() {
               <motion.div
                 key={dept._id}
                 onClick={() => setSelectedDept(dept)}
-                className={`relative p-4 rounded-lg border cursor-pointer transition-all ${
+                className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                   selectedDept?._id === dept._id
-                    ? 'bg-cyan-500/20 border-cyan-400'
-                    : 'bg-slate-900/60 border-white/10 hover:border-cyan-500/30'
+                    ? 'bg-brand-50 dark:bg-brand-950/60 border-brand-500 shadow-sm'
+                    : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <h4 className="font-mono text-sm font-semibold text-white">{dept.name}</h4>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{dept.name}</h4>
                     {dept.description && (
-                      <p className="text-[11px] text-slate-400 mt-1">{dept.description}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{dept.description}</p>
                     )}
                   </div>
                   <button
@@ -119,20 +115,18 @@ export default function DepartmentManagement() {
                       e.stopPropagation();
                       handleDeleteDepartment(dept._id);
                     }}
-                    className="text-red-400 hover:text-red-300 transition-colors"
+                    className="p-1 rounded-lg text-slate-400 hover:text-rose-500 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="flex items-center gap-4 text-[11px] text-slate-500 font-mono">
+                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-700/60">
                   <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
+                    <Users className="w-3.5 h-3.5 text-brand-500" />
                     {dept.employee_count} employees
                   </span>
-                  {dept.head_id && (
-                    <span>Head: {dept.head_id.name}</span>
-                  )}
+                  {dept.head_id && <span>Head: {dept.head_id.name}</span>}
                 </div>
               </motion.div>
             ))}
@@ -145,30 +139,37 @@ export default function DepartmentManagement() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-lg border border-cyan-500/20 bg-slate-950/80 p-4"
+          className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-5 space-y-3"
         >
-          <h3 className="font-mono text-sm font-semibold text-cyan-300 mb-4">
-            {selectedDept.name} - EMPLOYEE ASSIGNMENTS
+          <h3 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            {selectedDept.name} — Personnel Assignments
           </h3>
 
           <div className="max-h-64 overflow-y-auto space-y-2">
             {employees
-              .filter((emp) => emp.departments?.includes(selectedDept.name) || emp._id === selectedDept.head_id?._id)
+              .filter(
+                (emp) =>
+                  emp.departments?.includes(selectedDept.name) ||
+                  emp._id === selectedDept.head_id?._id
+              )
               .map((emp) => (
                 <div
                   key={emp._id}
-                  className="flex items-center justify-between p-2.5 rounded bg-slate-900/60 border border-white/5 text-[11px] font-mono"
+                  className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-xs"
                 >
                   <div>
-                    <p className="text-white">{emp.name}</p>
-                    <p className="text-slate-500">{emp.email}</p>
+                    <p className="font-semibold text-slate-900 dark:text-white">{emp.name}</p>
+                    <p className="text-slate-400 text-[11px]">{emp.email}</p>
                   </div>
-                  <span className="text-cyan-300 text-[10px] uppercase">{emp.role}</span>
+                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300">
+                    {emp.role.replace('_', ' ')}
+                  </span>
                 </div>
               ))}
 
-            {employees.filter((emp) => emp.departments?.includes(selectedDept.name)).length === 0 && (
-              <p className="text-center text-slate-500 text-xs py-4">No employees assigned</p>
+            {employees.filter((emp) => emp.departments?.includes(selectedDept.name)).length ===
+              0 && (
+              <p className="text-center text-slate-400 text-xs py-4">No employees assigned</p>
             )}
           </div>
         </motion.div>

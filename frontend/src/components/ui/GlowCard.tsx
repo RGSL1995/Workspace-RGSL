@@ -1,21 +1,29 @@
 import React, { useRef, useState } from 'react';
 import { motion, useMotionTemplate, useMotionValue } from 'motion/react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface GlowCardProps {
   children: React.ReactNode;
   className?: string;
   glowColor?: string;
+  onClick?: () => void;
 }
 
 export const GlowCard: React.FC<GlowCardProps> = ({
   children,
   className = '',
-  glowColor = 'rgba(0, 245, 255, 0.15)',
+  glowColor,
+  onClick,
 }) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
+  const defaultGlow = isDark ? 'rgba(99, 102, 241, 0.22)' : 'rgba(99, 102, 241, 0.1)';
+  const activeGlow = glowColor || defaultGlow;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -25,27 +33,35 @@ export const GlowCard: React.FC<GlowCardProps> = ({
   };
 
   return (
-    <div
+    <motion.div
       ref={cardRef}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 backdrop-blur-xl transition-all duration-300 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(0,245,255,0.12)] ${className}`}
+      onClick={onClick}
+      className={`relative overflow-hidden rounded-2xl theme-card ${
+        onClick ? 'cursor-pointer' : ''
+      } ${className}`}
+      style={{
+        backgroundColor: 'var(--bg-card)',
+        borderColor: isHovered ? 'var(--border-card-hover)' : 'var(--border-card)',
+      }}
     >
       <motion.div
-        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-300"
+        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-300 z-0"
         style={{
           opacity: isHovered ? 1 : 0,
           background: useMotionTemplate`
             radial-gradient(
-              350px circle at ${mouseX}px ${mouseY}px,
-              ${glowColor},
+              380px circle at ${mouseX}px ${mouseY}px,
+              ${activeGlow},
               transparent 80%
             )
           `,
         }}
       />
       <div className="relative z-10">{children}</div>
-    </div>
+    </motion.div>
   );
 };

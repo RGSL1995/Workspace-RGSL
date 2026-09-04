@@ -122,7 +122,7 @@ passport.use(
               expires_at: Date.now() + 3600 * 1000,
             },
             created_by: employee._id,
-            last_synced: new Date(),
+            last_synced: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
             sync_status: "idle",
           });
 
@@ -132,7 +132,7 @@ passport.use(
           console.log(`🔐 [PASSPORT STEP 7] Updating EXISTING email connection`);
           emailConnection.google_tokens = {
             access_token: accessToken,
-            refresh_token: refreshToken,
+            refresh_token: refreshToken || emailConnection.google_tokens?.refresh_token,
             expires_at: Date.now() + 3600 * 1000,
           };
           emailConnection.last_synced = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);

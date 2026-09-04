@@ -67,10 +67,13 @@ export const syncEmailsFromConnection = async (
     const gmail = getGmailClient(updatedConnection.google_tokens.access_token);
     console.log(`🔐 [SYNC] Gmail client initialized`);
 
-    // Get emails from last sync or from 30 days ago (for first sync to get all history)
-    const lastSynced = updatedConnection.last_synced || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    // Get emails from last sync (look back 24h for overlap) or 30 days ago for initial sync
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const lastSynced = updatedConnection.last_synced && updatedConnection.last_synced > thirtyDaysAgo
+      ? new Date(updatedConnection.last_synced.getTime() - 24 * 60 * 60 * 1000)
+      : thirtyDaysAgo;
     const query = `after:${Math.floor(lastSynced.getTime() / 1000)}`;
-    console.log(`📅 [SYNC] Query: ${query} (lastSynced: ${lastSynced.toISOString()})`);
+    console.log(`📅 [SYNC] Query: ${query} (since: ${lastSynced.toISOString()})`);
 
     // List messages
     const listResponse = await gmail.users.messages.list({

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Settings, BarChart3, Users, Mail } from 'lucide-react';
+import { BarChart3, Users, Mail, Shield } from 'lucide-react';
 import DepartmentManagement from './DepartmentManagement';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import SharedMailboxManagement from './SharedMailboxManagement';
 
-type AdminView = 'departments' | 'analytics' | 'mailboxes';
+type AdminView = 'analytics' | 'departments' | 'mailboxes';
 
 export default function AdminTab() {
   const [activeView, setActiveView] = useState<AdminView>('analytics');
@@ -14,39 +14,42 @@ export default function AdminTab() {
       id: 'analytics',
       label: 'Analytics Dashboard',
       icon: BarChart3,
-      description: 'View system-wide metrics and insights',
+      description: 'System-wide metrics and productivity insights',
     },
     {
       id: 'departments',
-      label: 'Departments',
+      label: 'Department Hierarchy',
       icon: Users,
-      description: 'Manage departments and assignments',
+      description: 'Manage departmental roles and personnel allocations',
     },
     {
       id: 'mailboxes',
       label: 'Shared Mailboxes',
       icon: Mail,
-      description: 'Manage shared email inboxes and access',
+      description: 'Manage shared email accounts and team access',
     },
   ];
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/80 via-slate-950/90 to-black/90 p-6 backdrop-blur-2xl">
-        <div className="flex items-center gap-3 mb-2">
-          <Settings className="w-6 h-6 text-cyan-400" />
-          <h2 className="text-2xl font-display font-bold text-white tracking-wider">
-            ADMIN CONTROL PANEL
+      <div>
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Super Admin Console
           </h2>
+          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-center gap-1">
+            <Shield size={12} />
+            Privileged
+          </span>
         </div>
-        <p className="text-slate-400 font-mono text-xs">
-          System administration, analytics, and department management
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          Global system governance, department organization, and performance telemetry
         </p>
       </div>
 
-      {/* View Switcher */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* View Switcher Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {views.map((view) => {
           const Icon = view.icon;
           const isActive = activeView === view.id;
@@ -54,26 +57,40 @@ export default function AdminTab() {
             <button
               key={view.id}
               onClick={() => setActiveView(view.id as AdminView)}
-              className={`relative rounded-xl border p-4 transition-all duration-300 ${
+              className={`text-left p-4 rounded-2xl border transition-all ${
                 isActive
-                  ? 'bg-gradient-to-r from-cyan-500/20 via-indigo-500/20 to-transparent border-cyan-400 shadow-[0_0_20px_rgba(0,245,255,0.15)]'
-                  : 'border-white/10 bg-slate-900/60 hover:border-cyan-500/30 hover:bg-slate-900/80'
+                  ? 'bg-brand-50/80 dark:bg-brand-950/50 border-brand-300 dark:border-brand-700 shadow-sm'
+                  : 'bg-white/80 dark:bg-slate-900/60 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-xs'
               }`}
             >
-              <Icon className={`w-5 h-5 mb-2 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
-              <div className="text-left">
-                <p className={`font-mono text-sm font-semibold ${isActive ? 'text-white' : 'text-slate-300'}`}>
-                  {view.label}
-                </p>
-                <p className="font-mono text-[11px] text-slate-500 mt-1">{view.description}</p>
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${
+                  isActive
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <Icon size={18} />
               </div>
+              <p
+                className={`text-sm font-bold ${
+                  isActive
+                    ? 'text-brand-700 dark:text-brand-300'
+                    : 'text-slate-800 dark:text-slate-200'
+                }`}
+              >
+                {view.label}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+                {view.description}
+              </p>
             </button>
           );
         })}
       </div>
 
       {/* Content Area */}
-      <div className="rounded-2xl border border-cyan-500/20 bg-slate-900/60 backdrop-blur-xl p-6">
+      <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl p-6 shadow-xs">
         {activeView === 'analytics' && <AnalyticsDashboard />}
         {activeView === 'departments' && <DepartmentManagement />}
         {activeView === 'mailboxes' && <SharedMailboxManagement />}

@@ -8,12 +8,10 @@ import {
   EyeOff,
   UserPlus,
   FileText,
-  Sparkles,
   CheckCircle2,
   RefreshCw,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { BorderBeam } from './ui/BorderBeam';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -242,10 +240,10 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-3">
-        <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin mx-auto" />
-        <p className="font-mono text-xs text-cyan-300 tracking-wider">
-          FETCHING DIRECTIVE PAYLOAD & ATTACHMENTS...
+      <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-3 theme-card">
+        <RefreshCw className="w-6 h-6 text-brand-500 animate-spin mx-auto" />
+        <p className="text-xs font-semibold theme-muted">
+          Loading email message & attachments...
         </p>
       </div>
     );
@@ -253,23 +251,23 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
 
   if (error || !email) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4">
-        <AlertCircle className="text-rose-400 mx-auto" size={36} />
-        <p className="text-xs font-mono text-rose-300">{error || 'Directive not found'}</p>
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4 theme-card">
+        <AlertCircle className="text-rose-500 mx-auto" size={32} />
+        <p className="text-xs font-medium text-rose-600 dark:text-rose-400">{error || 'Message not found'}</p>
         <button
           onClick={onClose}
-          className="px-4 py-2 rounded-xl bg-slate-900 border border-white/10 hover:border-cyan-400 text-xs font-mono text-white transition-all"
+          className="px-4 py-2 rounded-xl theme-card-subtle text-xs font-semibold theme-heading transition"
         >
-          RETURN TO STREAM
+          Return to Inbox
         </button>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="h-full flex flex-col overflow-y-auto font-sans">
-      {/* HUD Control Toolbar */}
-      <div className="sticky top-0 z-20 flex items-center justify-between p-4 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
+    <div ref={containerRef} className="h-full flex flex-col overflow-y-auto font-sans theme-card">
+      {/* Control Toolbar */}
+      <div className="sticky top-0 z-20 flex items-center justify-between p-3.5 border-b app-header backdrop-blur-xl">
         <div className="flex items-center gap-2">
           {/* Star Toggle */}
           <button
@@ -277,75 +275,75 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
             disabled={actionLoading}
             className={`p-2 rounded-xl border transition-all ${
               email.is_starred
-                ? 'bg-amber-500/20 border-amber-400/50 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
-                : 'bg-slate-900/60 border-white/10 text-slate-400 hover:text-white'
+                ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-500'
+                : 'theme-card-subtle text-slate-400 hover:text-slate-700 dark:hover:text-white'
             }`}
-            title={email.is_starred ? 'Starred' : 'Star directive'}
+            title={email.is_starred ? 'Starred' : 'Star message'}
           >
-            <Star size={16} className={email.is_starred ? 'fill-amber-400' : ''} />
+            <Star size={15} className={email.is_starred ? 'fill-amber-400' : ''} />
           </button>
 
           {/* Mark Read/Unread */}
           <button
             onClick={handleToggleRead}
             disabled={actionLoading}
-            className="p-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-400 hover:text-white hover:border-cyan-400/40 transition-all"
+            className="p-2 rounded-xl theme-card-subtle text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition"
             title={email.is_read ? 'Mark unread' : 'Mark read'}
           >
-            {email.is_read ? <EyeOff size={16} /> : <Eye size={16} />}
+            {email.is_read ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
 
           {/* Delegate Task Button */}
           <button
             onClick={handleOpenAssignModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-indigo-500/20 border border-cyan-500/40 text-cyan-300 hover:text-white hover:border-cyan-400 text-xs font-mono tracking-wider font-semibold transition-all shadow-[0_0_15px_rgba(0,245,255,0.15)] active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition active:scale-95"
           >
             <UserPlus size={14} />
-            <span>DELEGATE AS TASK</span>
+            <span>Create Task</span>
           </button>
         </div>
 
-        {/* Close inspector button */}
+        {/* Close button */}
         <button
           onClick={onClose}
-          className="p-2 rounded-xl bg-slate-900/60 border border-white/10 text-slate-400 hover:text-white hover:border-rose-400/40 transition-all"
-          title="Close inspector"
+          className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition"
+          title="Close details"
         >
           <X size={16} />
         </button>
       </div>
 
-      {/* Directive Content Body */}
+      {/* Content Body */}
       <div className="p-6 space-y-6 flex-1">
         {/* Header Metadata */}
-        <div className="space-y-3 pb-5 border-b border-white/10">
+        <div className="space-y-3 pb-5 border-b border-[var(--border-color)]">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded bg-cyan-950/70 border border-cyan-500/30 text-cyan-300 font-bold tracking-wider">
-              DIRECTIVE // {email.classification?.toUpperCase()}
+            <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full theme-card-subtle theme-heading">
+              {email.classification?.replace('_', ' ').toUpperCase()}
             </span>
-            <span className="text-[10px] font-mono text-slate-400">
+            <span className="text-xs theme-muted">
               {new Date(email.received_at).toLocaleString()}
             </span>
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-display font-bold text-white leading-tight">
+          <h1 className="text-xl sm:text-2xl font-bold theme-heading leading-tight">
             {email.subject || '(No Subject)'}
           </h1>
 
           {/* Sender & Receiver Info */}
-          <div className="p-3.5 rounded-xl bg-slate-900/50 border border-white/5 font-mono text-xs space-y-1.5">
+          <div className="p-3.5 rounded-2xl theme-card-subtle text-xs space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-slate-500 w-12">FROM:</span>
-              <span className="text-cyan-300 font-semibold">{email.from}</span>
+              <span className="theme-muted w-12 font-medium">From:</span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{email.from}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-slate-500 w-12">TO:</span>
-              <span className="text-slate-300">{email.to?.join(', ') || 'Me'}</span>
+              <span className="theme-muted w-12 font-medium">To:</span>
+              <span className="theme-heading">{email.to?.join(', ') || 'Me'}</span>
             </div>
             {email.cc && email.cc.length > 0 && (
               <div className="flex items-center gap-2">
-                <span className="text-slate-500 w-12">CC:</span>
-                <span className="text-slate-400">{email.cc.join(', ')}</span>
+                <span className="theme-muted w-12 font-medium">Cc:</span>
+                <span className="theme-muted">{email.cc.join(', ')}</span>
               </div>
             )}
           </div>
@@ -353,32 +351,32 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
 
         {/* Attachments Section */}
         {email.attachments && email.attachments.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-              <FileText size={14} className="text-cyan-400" />
-              <span>PAYLOAD ATTACHMENTS ({email.attachments.length})</span>
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-xs font-semibold theme-heading">
+              <FileText size={14} className="text-indigo-600 dark:text-indigo-400" />
+              <span>Attachments ({email.attachments.length})</span>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-2.5">
+            <div className="grid sm:grid-cols-2 gap-2">
               {email.attachments.map((att) => (
                 <div
                   key={att.attachmentId}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-white/10 hover:border-cyan-400/40 transition-all"
+                  className="flex items-center justify-between p-3 rounded-2xl theme-card-subtle"
                 >
                   <div className="min-w-0 flex-1 pr-2">
-                    <p className="text-xs font-mono text-white truncate">{att.filename}</p>
-                    <p className="text-[10px] font-mono text-slate-500">{formatFileSize(att.size)}</p>
+                    <p className="text-xs font-medium theme-heading truncate">{att.filename}</p>
+                    <p className="text-[10px] theme-muted">{formatFileSize(att.size)}</p>
                   </div>
                   <button
                     onClick={() => handleDownloadAttachment(att)}
                     disabled={downloadingAttachmentId === att.attachmentId}
-                    className="p-2 rounded-lg bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 hover:text-white hover:border-cyan-400 transition-all flex-shrink-0"
+                    className="p-1.5 rounded-lg theme-card text-slate-600 dark:text-slate-200 hover:text-indigo-600 transition"
                     title="Download attachment"
                   >
                     {downloadingAttachmentId === att.attachmentId ? (
-                      <RefreshCw size={14} className="animate-spin" />
+                      <RefreshCw size={13} className="animate-spin text-indigo-500" />
                     ) : (
-                      <Download size={14} />
+                      <Download size={13} />
                     )}
                   </button>
                 </div>
@@ -389,59 +387,54 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
 
         {/* Message Body */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 pb-2">
-            <Sparkles size={14} className="text-purple-400" />
-            <span>PAYLOAD TEXT STREAM</span>
-          </div>
-
-          <div className="p-5 rounded-2xl bg-slate-900/40 border border-white/10 text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+          <div className="p-5 rounded-2xl theme-card-subtle theme-body text-sm leading-relaxed whitespace-pre-wrap">
             {email.body}
           </div>
         </div>
       </div>
 
-      {/* Futuristic Task Delegation Modal */}
+      {/* Task Delegation Modal */}
       <AnimatePresence>
         {showAssignModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md rounded-2xl border border-cyan-500/40 bg-slate-950 p-6 space-y-5 shadow-[0_0_50px_rgba(0,245,255,0.2)]"
+              className="relative w-full max-w-md rounded-3xl theme-card p-6 space-y-5 shadow-2xl"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
                 <div className="flex items-center gap-2">
-                  <UserPlus size={18} className="text-cyan-400" />
-                  <h3 className="font-display font-bold text-base text-white">
-                    DISPATCH OPERATIONAL TASK
+                  <UserPlus size={18} className="text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="font-bold text-base theme-heading">
+                    Delegate Email as Task
                   </h3>
                 </div>
                 <button
                   onClick={() => setShowAssignModal(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white"
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               <div className="space-y-3">
-                <label className="block text-xs font-mono text-slate-400">
-                  SELECT ASSIGNEE FOR DIRECTIVE:
+                <label className="block text-xs font-semibold theme-body">
+                  Select Team Member Assignee:
                 </label>
 
                 {employeesLoading ? (
-                  <div className="py-6 text-center text-xs font-mono text-cyan-400">
+                  <div className="py-6 text-center text-xs text-indigo-500">
                     <RefreshCw size={18} className="animate-spin mx-auto mb-2" />
-                    <span>Loading personnel mesh...</span>
+                    <span>Loading team members...</span>
                   </div>
                 ) : (
                   <select
                     value={selectedEmployee || ''}
                     onChange={(e) => setSelectedEmployee(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/15 focus:border-cyan-400 rounded-xl px-4 py-3 text-xs font-mono text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/30"
+                    className="w-full theme-input rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="">-- Choose Operator --</option>
+                    <option value="">-- Choose Team Member --</option>
                     {employees.map((emp) => (
                       <option key={emp._id} value={emp._id}>
                         {emp.name} ({emp.email}) - {emp.role}
@@ -452,30 +445,29 @@ export default function EmailDetail({ emailId, onClose }: EmailDetailProps) {
               </div>
 
               {assignmentSuccess ? (
-                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs font-mono text-emerald-300 flex items-center justify-center gap-2">
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-2">
                   <CheckCircle2 size={16} />
-                  <span>TASK CREATED & DISPATCHED!</span>
+                  <span>Task delegated successfully!</span>
                 </div>
               ) : (
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-2.5 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowAssignModal(false)}
-                    className="flex-1 py-2.5 rounded-xl border border-white/10 bg-slate-900 text-xs font-mono text-slate-300 hover:bg-slate-800 transition"
+                    className="flex-1 py-2.5 rounded-xl border border-[var(--border-color)] theme-card-subtle text-xs font-semibold theme-heading hover:opacity-80 transition"
                   >
-                    CANCEL
+                    Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleAssignEmail}
                     disabled={!selectedEmployee || assignmentLoading}
-                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-40 text-slate-950 font-bold font-mono text-xs tracking-wider uppercase transition shadow-[0_0_15px_rgba(0,245,255,0.3)]"
+                    className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-semibold text-xs transition shadow-sm"
                   >
-                    {assignmentLoading ? 'DISPATCHING...' : 'CONFIRM DISPATCH'}
+                    {assignmentLoading ? 'Delegating...' : 'Confirm Assignment'}
                   </button>
                 </div>
               )}
-              <BorderBeam size={100} duration={8} colorFrom="#00f5ff" colorTo="#a855f7" />
             </motion.div>
           </div>
         )}

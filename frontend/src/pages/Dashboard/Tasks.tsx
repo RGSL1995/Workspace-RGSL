@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, Clock, Mail } from 'lucide-react';
-import { motion } from 'motion/react';
+import {
+  CheckCircle2,
+  Clock,
+  Mail,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../hooks/useSocket';
 
@@ -34,15 +41,12 @@ export default function Tasks() {
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
   const { on } = useSocket(user?._id);
 
-  // Fetch tasks on mount
   useEffect(() => {
     fetchTasks();
   }, [user]);
 
-  // Listen for real-time task creation via Socket.io
   useEffect(() => {
     on('task:created', (newTask: Task) => {
-      console.log('✅ [TASKS] New task received via Socket.io:', newTask);
       setTasks((prevTasks) => [newTask, ...prevTasks]);
     });
   }, [on]);
@@ -83,148 +87,211 @@ export default function Tasks() {
     }
   };
 
-  const getStatusColor = (status: Task['status']) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300';
-      case 'in_progress':
-        return 'bg-blue-500/20 border-blue-500/40 text-blue-300';
-      case 'escalated':
-        return 'bg-orange-500/20 border-orange-500/40 text-orange-300';
-      default:
-        return 'bg-slate-500/20 border-slate-500/40 text-slate-300';
-    }
-  };
-
-  const getPriorityColor = (priority: Task['priority']) => {
+  const getPriorityBadge = (priority: Task['priority']) => {
     switch (priority) {
       case 'critical':
-        return 'text-red-400';
+        return 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800';
       case 'high':
-        return 'text-orange-400';
+        return 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800';
       case 'medium':
-        return 'text-yellow-400';
+        return 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800';
       default:
-        return 'text-green-400';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700';
     }
   };
 
   const filteredTasks = tasks.filter((task) => task.status === filter);
 
+  const statusTabs: { id: Task['status']; label: string; count: number }[] = [
+    { id: 'open', label: 'To Do', count: tasks.filter((t) => t.status === 'open').length },
+    { id: 'in_progress', label: 'In Progress', count: tasks.filter((t) => t.status === 'in_progress').length },
+    { id: 'completed', label: 'Completed', count: tasks.filter((t) => t.status === 'completed').length },
+  ];
+
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        {(['open', 'in_progress', 'completed'] as Task['status'][]).map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-3 py-1 rounded text-xs font-mono uppercase transition-all ${
-              filter === status
-                ? 'bg-cyan-500/30 border border-cyan-400 text-cyan-300'
-                : 'bg-slate-900/60 border border-white/10 text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            {status.replace('_', ' ')}
-          </button>
-        ))}
+    <div className="space-y-6">
+      {/* Header & Filter Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            My Tasks
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-200 mt-0.5">
+            Manage your individual action items and delegated directives
+          </p>
+        </div>
+
+        {/* Status Switcher Tabs */}
+        <div className="flex p-1 rounded-xl theme-card-subtle gap-1">
+          {statusTabs.map((tab) => {
+            const isActive = filter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setFilter(tab.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  isActive
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-700 dark:text-white hover:text-indigo-600 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                    isActive
+                      ? 'bg-white/20 text-white'
+                      : 'bg-black/5 dark:bg-white/10 text-slate-700 dark:text-white'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Task List */}
+      {/* Task List Cards */}
       {loading ? (
-        <div className="text-center py-12 text-slate-400">Loading tasks...</div>
+        <div className="py-16 text-center text-slate-400 dark:text-slate-200 text-xs font-medium">
+          Loading assigned tasks...
+        </div>
       ) : filteredTasks.length === 0 ? (
-        <div className="text-center py-12 text-slate-400">No {filter} tasks</div>
+        <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-slate-900/40 p-12 text-center backdrop-blur-xl">
+          <CheckCircle2 className="w-10 h-10 text-brand-500 mx-auto mb-3 opacity-80" />
+          <h3 className="text-base font-semibold text-slate-800 dark:text-white">
+            No {filter.replace('_', ' ')} tasks
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-200 mt-1">All clear for this queue category.</p>
+        </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {filteredTasks.map((task) => {
             const isExpanded = expandedTaskId === task._id;
             return (
               <motion.div
                 key={task._id}
-                initial={{ opacity: 0, y: 10 }}
+                layout
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`rounded-lg border ${getStatusColor(task.status)} backdrop-blur-sm transition-all`}
+                className="rounded-2xl theme-card overflow-hidden"
               >
                 <div
                   onClick={() => setExpandedTaskId(isExpanded ? null : task._id)}
-                  className="p-4 cursor-pointer hover:shadow-lg transition-all"
+                  className="p-4 sm:p-5 cursor-pointer flex items-start justify-between gap-4"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-sm">{task.title}</h3>
-                        {task.email_id && <Mail size={14} className="text-indigo-400" />}
-                      </div>
-                      <p className="text-xs opacity-80 line-clamp-2 mt-1">{task.description}</p>
-                      <div className="flex gap-2 mt-2 text-xs opacity-70 flex-wrap">
-                        <span className={getPriorityColor(task.priority)}>
-                          ⬀ {task.priority}
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${getPriorityBadge(
+                          task.priority
+                        )}`}
+                      >
+                        {task.priority} Priority
+                      </span>
+
+                      {task.department && (
+                        <span className="text-[11px] font-medium text-slate-600 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                          {task.department}
                         </span>
-                        <span>📁 {task.department}</span>
-                        {task.deadline && (
-                          <span>📅 {new Date(task.deadline).toLocaleDateString()}</span>
-                        )}
-                      </div>
+                      )}
+
+                      {task.deadline && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                          <Calendar size={12} />
+                          <span>{new Date(task.deadline).toLocaleDateString()}</span>
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex gap-2 flex-shrink-0">
-                      {task.status !== 'completed' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateTaskStatus(task._id, 'completed');
-                          }}
-                          className="p-2 rounded hover:bg-emerald-500/20 transition-colors"
-                          title="Mark complete"
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                        {task.title}
+                      </h3>
+                      {task.email_id && (
+                        <span
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded-md"
+                          title="Created from Email"
                         >
-                          <CheckCircle size={16} className="text-emerald-400" />
-                        </button>
-                      )}
-                      {task.status === 'open' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateTaskStatus(task._id, 'in_progress');
-                          }}
-                          className="p-2 rounded hover:bg-blue-500/20 transition-colors"
-                          title="Start task"
-                        >
-                          <Clock size={16} className="text-blue-400" />
-                        </button>
+                          <Mail size={12} />
+                          <span>From Email</span>
+                        </span>
                       )}
                     </div>
+
+                    {task.description && (
+                      <p className="text-xs text-slate-600 dark:text-white line-clamp-2 leading-relaxed">
+                        {task.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Quick Status Action Buttons */}
+                  <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {task.status !== 'completed' && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => updateTaskStatus(task._id, 'completed')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold transition"
+                        title="Mark Complete"
+                      >
+                        <CheckCircle2 size={14} />
+                        <span className="hidden sm:inline">Complete</span>
+                      </motion.button>
+                    )}
+
+                    {task.status === 'open' && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => updateTaskStatus(task._id, 'in_progress')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 text-xs font-semibold transition"
+                        title="Start Task"
+                      >
+                        <Clock size={14} />
+                        <span className="hidden sm:inline">Start</span>
+                      </motion.button>
+                    )}
+
+                    <button
+                      onClick={() => setExpandedTaskId(isExpanded ? null : task._id)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
                   </div>
                 </div>
 
-                {/* Email Preview (if task came from email assignment) */}
-                {isExpanded && task.email_id && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="border-t border-white/10 p-4 bg-slate-900/40"
-                  >
-                    <div className="space-y-3">
-                      <div>
-                        <div className="text-[10px] font-mono text-slate-400 uppercase mb-1">📧 Source Email</div>
-                        <div className="text-xs text-slate-300">
-                          <div className="font-semibold">{task.email_id.subject}</div>
-                          <div className="text-slate-400 text-[11px] mt-1">From: {task.email_id.from}</div>
-                          <div className="text-slate-500 text-[10px] mt-1">
-                            {new Date(task.email_id.received_at).toLocaleString()}
+                {/* Expanded Details & Source Email */}
+                <AnimatePresence>
+                  {isExpanded && task.email_id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="border-t border-slate-100 dark:border-slate-800 p-4 sm:p-5 bg-slate-50/60 dark:bg-slate-800/40"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                          <Mail size={14} className="text-brand-500" />
+                          <span>Source Email Thread</span>
+                        </div>
+                        <div className="text-xs text-slate-600 dark:text-slate-300">
+                          <div className="font-semibold text-slate-900 dark:text-white">
+                            {task.email_id.subject}
+                          </div>
+                          <div className="text-slate-500 text-[11px] mt-0.5">
+                            From: {task.email_id.from}
                           </div>
                         </div>
-                      </div>
-                      <div className="bg-slate-950/60 rounded border border-white/5 p-3">
-                        <div className="text-xs text-slate-300 max-h-40 overflow-y-auto">
-                          {task.email_id.body.substring(0, 500)}
-                          {task.email_id.body.length > 500 && '...'}
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed max-h-48 overflow-y-auto">
+                          {task.email_id.body}
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             );
           })}
