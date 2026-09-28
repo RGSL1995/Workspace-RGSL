@@ -56,7 +56,7 @@ router.get("/:company", requireAuth, async (req: Request, res: Response) => {
   try {
     const { company } = req.params;
 
-    const date = await getAnchorFreeDateByCompany(company);
+    const date = await getAnchorFreeDateByCompany(company as string);
 
     if (!date) {
       return res.status(404).json({ error: "Anchor free date not found" });
@@ -76,7 +76,7 @@ router.get("/:company", requireAuth, async (req: Request, res: Response) => {
  * - Column 2: Free Date (DD/MM/YYYY or MM/DD/YYYY or YYYY-MM-DD)
  * - Column 3: Notes (optional)
  */
-router.post("/upload", requireAuth, async (req: Request, res: Response) => {
+router.post("/upload", requireAuth, async (req: any, res: Response) => {
   try {
     if (!req.body.file && !req.files) {
       return res.status(400).json({
@@ -87,8 +87,8 @@ router.post("/upload", requireAuth, async (req: Request, res: Response) => {
     let fileBuffer: Buffer;
 
     // Handle file upload (if using multipart form)
-    if (req.files && (req.files as any).file) {
-      fileBuffer = (req.files as any).file.data;
+    if (req.files && req.files.file) {
+      fileBuffer = req.files.file.data;
     } else if (req.body.file) {
       // Handle base64 file
       fileBuffer = Buffer.from(req.body.file, "base64");

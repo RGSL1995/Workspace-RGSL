@@ -19,10 +19,10 @@ const AnchorFreeDateSchema = new Schema<IAnchorFreeDate>(
       index: true,
     },
     ipo_id: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "IPO",
       default: null,
-    },
+    } as any,
     free_date: {
       type: Date,
       required: true,
@@ -47,7 +47,7 @@ const AnchorFreeDateSchema = new Schema<IAnchorFreeDate>(
 );
 
 // Update status based on dates
-AnchorFreeDateSchema.pre("save", function (next) {
+AnchorFreeDateSchema.pre("save", function (this: any, next: any) {
   const now = new Date();
   const freeDate = new Date(this.free_date);
 
