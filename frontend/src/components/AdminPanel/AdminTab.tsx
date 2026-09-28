@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { BarChart3, Users, Mail, Shield } from 'lucide-react';
+import { BarChart3, Users, Mail, Shield, Upload } from 'lucide-react';
 import DepartmentManagement from './DepartmentManagement';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import SharedMailboxManagement from './SharedMailboxManagement';
+import AnchorFreeDateUpload from '../AnchorFreeDateUpload';
 
-type AdminView = 'analytics' | 'departments' | 'mailboxes';
+type AdminView = 'analytics' | 'departments' | 'mailboxes' | 'anchor';
 
 export default function AdminTab() {
   const [activeView, setActiveView] = useState<AdminView>('analytics');
@@ -27,6 +28,12 @@ export default function AdminTab() {
       label: 'Shared Mailboxes',
       icon: Mail,
       description: 'Manage shared email accounts and team access',
+    },
+    {
+      id: 'anchor',
+      label: 'Anchor Free Dates',
+      icon: Upload,
+      description: 'Upload and manage IPO anchor investor free dates',
     },
   ];
 
@@ -94,6 +101,7 @@ export default function AdminTab() {
         {activeView === 'analytics' && <AnalyticsDashboard />}
         {activeView === 'departments' && <DepartmentManagement />}
         {activeView === 'mailboxes' && <SharedMailboxManagement />}
+        {activeView === 'anchor' && <AnchorFreeDateUpload />}
       </div>
     </div>
   );

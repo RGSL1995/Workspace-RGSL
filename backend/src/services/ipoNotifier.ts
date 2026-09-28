@@ -1,5 +1,6 @@
 import IPO from "../models/IPO";
 import Employee from "../models/Employee";
+import { notifyAllUsers } from "./notificationService";
 
 let socketServer: any = null;
 
@@ -100,9 +101,15 @@ export const notifyAllEmployeesAboutIPO = async (ipo: any) => {
       }
     }
 
+    // Send email notifications to subscribed users
+    await notifyAllUsers({
+      type: "ipo_new",
+      ipo,
+    });
+
     // Collect WhatsApp numbers (would need employee phone field)
     // For now, this is a placeholder
-    const whatsappNumbers = []; // Would extract from employee DB when phone field added
+    const whatsappNumbers: string[] = []; // Would extract from employee DB when phone field added
 
     if (whatsappNumbers.length > 0) {
       await sendWhatsAppNotification(ipo, whatsappNumbers);

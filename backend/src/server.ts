@@ -19,8 +19,11 @@ import aiRoutes from "./routes/ai";
 import departmentRoutes from "./routes/departments";
 import analyticsRoutes from "./routes/analytics";
 import ipoRoutes from "./routes/ipo";
+import notificationRoutes from "./routes/notifications";
+import anchorFreeDateRoutes from "./routes/anchorFreeDate";
 import { startEmailScheduler } from "./jobs/emailScheduler";
 import { startIPOScheduler } from "./services/ipoScheduler";
+import { startDailyNotificationScheduler } from "./services/dailyNotificationScheduler";
 import { setSocketServer } from "./services/ipoNotifier";
 
 const app = express();
@@ -115,8 +118,10 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/ipo", ipoRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/anchor-free-dates", anchorFreeDateRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 
 // Create HTTP server for Socket.io
 const httpServer = createServer(app);
@@ -174,6 +179,9 @@ const startServer = async (): Promise<void> => {
 
   // Start IPO scraper scheduler (every 6 hours: "0 */6 * * *")
   startIPOScheduler("0 */6 * * *");
+
+  // Start daily IPO notification scheduler (8:45 AM every day)
+  startDailyNotificationScheduler();
 
   httpServer.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);

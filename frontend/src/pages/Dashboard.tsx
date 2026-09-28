@@ -8,7 +8,7 @@ import {
   Shield,
   Activity,
   Sparkles,
-  Settings,
+  Settings as SettingsIcon,
   TrendingUp,
   Layers,
 } from 'lucide-react';
@@ -21,13 +21,14 @@ import AIAssistant from './Dashboard/AIAssistant';
 import Tasks from './Dashboard/Tasks';
 import AssignedTasks from './Dashboard/AssignedTasks';
 import IPO from './Dashboard/IPO';
+import Settings from './Dashboard/Settings';
 import AdminTab from '../components/AdminPanel/AdminTab';
 import ITOperationsPanel from './Dashboard/ITOperationsPanel';
 import PinSetupModal from '../components/PinSetupModal';
 import { CyberBackground } from '../components/ui/CyberBackground';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 
-type TabType = 'briefing' | 'inbox' | 'assistant' | 'tasks' | 'assigned' | 'ipo' | 'admin' | 'operations';
+type TabType = 'briefing' | 'inbox' | 'assistant' | 'tasks' | 'assigned' | 'ipo' | 'settings' | 'admin' | 'operations';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -66,8 +67,9 @@ export default function Dashboard() {
     { id: 'tasks', label: 'My Tasks', icon: CheckCircle2 },
     { id: 'assigned', label: 'Assigned Tasks', icon: Activity },
     { id: 'ipo', label: 'IPO Dashboard', icon: TrendingUp },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon },
     ...(user?.role === 'super_admin'
-      ? [{ id: 'admin', label: 'Admin Panel', icon: Settings }]
+      ? [{ id: 'admin', label: 'Admin Panel', icon: Shield }]
       : []),
     ...(user?.role === 'it_admin'
       ? [{ id: 'operations', label: 'IT Operations', icon: Cpu }]
@@ -357,6 +359,18 @@ export default function Dashboard() {
                   transition={{ duration: 0.25 }}
                 >
                   <IPO />
+                </motion.div>
+              )}
+
+              {activeTab === 'settings' && (
+                <motion.div
+                  key="settings"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <Settings />
                 </motion.div>
               )}
 
